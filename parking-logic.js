@@ -552,13 +552,22 @@ function setupRegistrationForm() {
 
     // Listen to vehicle type and rate type changes
     const inputs = form.querySelectorAll('input[name="tipo_vehiculo"], input[name="rate_type"]');
-    inputs.forEach(input => input.onchange = calculateTotal);
+    inputs.forEach(input => {
+        input.onchange = calculateTotal;
+        input.oninput = calculateTotal;
+    });
 
     // Listen to date changes for automatic calculation
     const fechaIngreso = document.getElementById('fecha-ingreso');
     const fechaSalida = document.getElementById('fecha-salida');
-    if (fechaIngreso) fechaIngreso.onchange = calculateTotal;
-    if (fechaSalida) fechaSalida.onchange = calculateTotal;
+    if (fechaIngreso) {
+        fechaIngreso.onchange = calculateTotal;
+        fechaIngreso.oninput = calculateTotal;
+    }
+    if (fechaSalida) {
+        fechaSalida.onchange = calculateTotal;
+        fechaSalida.oninput = calculateTotal;
+    }
 
     calculateTotal();
 }
