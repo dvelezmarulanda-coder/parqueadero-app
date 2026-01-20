@@ -4,34 +4,12 @@
 
 console.log('🚀 app.js execution started');
 
-// ===== 1. CONFIGURATION (Formerly config.js) =====
-window.CONFIG = {
-    supabase: {
-        url: 'https://qgxbjicfsszzqiyrbzga.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFneGJqaWNmc3N6enFpeXJiemdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NjM0MjAsImV4cCI6MjA4NDQzOTQyMH0.f8fzov42E5CMk5dkw0tncCm_M32KLU_rUF84PJz0eCA'
-    },
-    parking: {
-        totalSpaces: 50,
-        carSpaces: 35,
-        motoSpaces: 15
-    },
-    alerts: {
-        warningMinutes: 60,
-        overdueColor: '#e74c3c',
-        warningColor: '#e67e22'
-    },
-    refresh: {
-        dashboardInterval: 30000
-    },
-    pricing: {
-        carHourlyRate: 2500,
-        motoHourlyRate: 1500,
-        carDayRate: 20000,
-        motoDayRate: 12000,
-        carMonthRate: 400000,
-        motoMonthRate: 250000
-    }
-};
+// ===== 1. CONFIGURATION =====
+// Config is now loaded from config.js
+if (!window.CONFIG) {
+    console.error('❌ CRITICAL: config.js not loaded!');
+    alert('Error crítico: Archivo de configuración no encontrado.');
+}
 
 // ===== 2. AUTHENTICATION HELPERS (Formerly auth.js) =====
 // Simple Base64 encoding for demo purposes
