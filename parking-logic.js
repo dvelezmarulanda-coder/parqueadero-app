@@ -713,9 +713,14 @@ async function handleRegistration() {
 
 // ===== REPORTS (Basic Implementation) =====
 function setupReportsFilters() {
-    const btn = document.getElementById('btn-generate-report');
-    if (btn) {
-        btn.onclick = loadReports;
+    const btnFilter = document.getElementById('btn-aplicar-filtros');
+    if (btnFilter) {
+        btnFilter.onclick = loadReports;
+    }
+
+    const btnPdf = document.getElementById('btn-exportar-pdf');
+    if (btnPdf) {
+        btnPdf.onclick = exportReportsToPDF;
     }
 }
 
@@ -724,13 +729,24 @@ async function loadReports() {
     const container = document.querySelector('#reportes tbody');
     if (!container) return;
 
+    // Get filters
+    const desde = document.getElementById('filter-desde')?.value;
+    const hasta = document.getElementById('filter-hasta')?.value;
+    const estado = document.getElementById('filter-estado')?.value || 'todos';
+
     // Show loading state
-    container.innerHTML = '<tr><td colspan="7" class="text-center">Cargando reportes...</td></tr>';
+    container.innerHTML = '<tr><td colspan="8" class="text-center">Cargando reportes...</td></tr>';
 
     try {
-        const { data: tickets, error } = await db
-            .from('tickets')
-            .select('*')
+        let query = db.from('tickets').select('*');
+
+        // Apply filters
+        if (desde) query = query.gte('fecha_ingreso', `${desde}T00:00:00`);
+        if (hasta) query = query.lte('fecha_ingreso', `${hasta}T23:59:59`);
+        if (estado === 'pagado') query = query.eq('estado_pago', true);
+        if (estado === 'pendiente') query = query.eq('estado_pago', false);
+
+        const { data: tickets, error } = await query
             .order('fecha_ingreso', { ascending: false });
 
         if (error) throw error;
@@ -768,6 +784,70 @@ function renderReportsTable(tickets) {
             </td>
         </tr>
     `).join('');
+}
+
+async function exportReportsToPDF() {
+    if (!window.jspdf) {
+        alert('Error: Librería PDF no cargada');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Get current filtered data logic - ideally we should store the last fetched data
+    // For now we will re-fetch or scrape from table. Scraping from table is easier for "what you see is what you get"
+
+    // Header
+    doc.setFontSize(18);
+    doc.text('Reporte de Parqueadero', 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    const dateStr = new Date().toLocaleString('es-CO');
+    doc.text(`Fecha de generación: ${dateStr}`, 14, 30);
+
+    // Table Data
+    const table = document.querySelector('.table');
+    const rows = [];
+
+    // Headers
+    const headers = [['Placa', 'Cliente', 'Tipo', 'Puesto', 'Ingreso', 'Total', 'Estado']];
+
+    // Body
+    if (table) {
+        const trs = table.querySelectorAll('tbody tr');
+        trs.forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length > 1) { // Skip loading/empty rows
+                rows.push([
+                    tds[0].innerText, // Placa
+                    tds[1].innerText, // Cliente
+                    tds[2].innerText, // Tipo
+                    tds[3].innerText, // Puesto
+                    tds[4].innerText, // Ingreso
+                    // Skip Salida Est (tds[5]) to save space
+                    tds[6].innerText, // Total
+                    tds[7].innerText  // Estado
+                ]);
+            }
+        });
+    }
+
+    if (rows.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+
+    doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 40,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+    });
+
+    doc.save(`reporte_parqueadero_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 
