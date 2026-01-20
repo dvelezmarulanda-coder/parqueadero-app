@@ -719,7 +719,7 @@ async function loadReports() {
     container.innerHTML = '<tr><td colspan="7" class="text-center">Cargando reportes...</td></tr>';
 
     try {
-        const { data: tickets, error } = await supabase
+        const { data: tickets, error } = await db
             .from('tickets')
             .select('*')
             .order('fecha_ingreso', { ascending: false });
