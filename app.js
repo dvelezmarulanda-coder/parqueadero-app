@@ -7,8 +7,8 @@ console.log('🚀 app.js execution started');
 // ===== 1. CONFIGURATION (Formerly config.js) =====
 window.CONFIG = {
     supabase: {
-        url: 'YOUR_SUPABASE_URL',
-        anonKey: 'YOUR_SUPABASE_ANON_KEY'
+        url: 'https://qgxbjicfsszzqiyrbzga.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFneGJqaWNmc3N6enFpeXJiemdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NjM0MjAsImV4cCI6MjA4NDQzOTQyMH0.f8fzov42E5CMk5dkw0tncCm_M32KLU_rUF84PJz0eCA'
     },
     parking: {
         totalSpaces: 50,
@@ -115,21 +115,25 @@ window.setupAdminAuth = () => {
 
 window.checkAdminAuth = () => {
     const modal = document.getElementById('admin-auth-modal');
-    if (!modal) return;
+    if (!modal) return false;
 
     const credentials = window.getAdminCredentials();
     if (!credentials) {
+        // First time setup
         modal.style.display = 'flex';
         const setupForm = document.getElementById('admin-setup-form');
         const loginForm = document.getElementById('admin-login-form');
         if (setupForm) setupForm.style.display = 'block';
         if (loginForm) loginForm.style.display = 'none';
+        return false;
     } else {
+        // Login required
         modal.style.display = 'flex';
         const setupForm = document.getElementById('admin-setup-form');
         const loginForm = document.getElementById('admin-login-form');
         if (setupForm) setupForm.style.display = 'none';
         if (loginForm) loginForm.style.display = 'block';
+        return false;
     }
 };
 
@@ -218,8 +222,8 @@ try {
     supabaseClient = new MockSupabase();
 }
 
-// Define the global accessor used by functions
-const supabase = supabaseClient;
+// Define the global accessor used by functions (renamed to avoid conflict with CDN)
+const db = supabaseClient;
 
 
 // ===== 5. STATE MANAGEMENT =====
@@ -365,7 +369,7 @@ function setupSearch() {
 async function loadDashboard() {
     console.log('Drawing Dashboard...');
     try {
-        const { data: tickets, error } = await supabase
+        const { data: tickets, error } = await db
             .from('tickets')
             .select('*')
             .eq('estado_pago', false)
@@ -419,7 +423,7 @@ async function calculateDailyRevenue() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const { data: paidTickets, error } = await supabase
+        const { data: paidTickets, error } = await db
             .from('tickets')
             .select('total')
             .eq('estado_pago', true)
@@ -507,7 +511,7 @@ async function markAsPaid(ticketId) {
     if (!confirm('¿Confirmar que el cliente ha pagado?')) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await db
             .from('tickets')
             .update({ estado_pago: true })
             .eq('id', ticketId);
@@ -546,8 +550,16 @@ function setupRegistrationForm() {
         await handleRegistration();
     };
 
+    // Listen to vehicle type and rate type changes
     const inputs = form.querySelectorAll('input[name="tipo_vehiculo"], input[name="rate_type"]');
     inputs.forEach(input => input.onchange = calculateTotal);
+
+    // Listen to date changes for automatic calculation
+    const fechaIngreso = document.getElementById('fecha-ingreso');
+    const fechaSalida = document.getElementById('fecha-salida');
+    if (fechaIngreso) fechaIngreso.onchange = calculateTotal;
+    if (fechaSalida) fechaSalida.onchange = calculateTotal;
+
     calculateTotal();
 }
 
@@ -566,21 +578,74 @@ function calculateTotal() {
         return;
     }
 
+    // Get dates
+    const fechaIngresoEl = document.getElementById('fecha-ingreso');
+    const fechaSalidaEl = document.getElementById('fecha-salida');
+
+    if (!fechaIngresoEl || !fechaSalidaEl || !fechaIngresoEl.value || !fechaSalidaEl.value) {
+        const totalEl = document.getElementById('total');
+        if (totalEl) totalEl.value = '';
+        return;
+    }
+
+    const fechaIngreso = new Date(fechaIngresoEl.value);
+    const fechaSalida = new Date(fechaSalidaEl.value);
+
+    // Calculate duration
+    const durationInfo = calculateDuration(fechaIngreso, fechaSalida);
+
+    if (durationInfo.totalHours <= 0) {
+        const totalEl = document.getElementById('total');
+        if (totalEl) totalEl.value = 0;
+        return;
+    }
+
     let total = 0;
+    let quantity = 0;
     const pricing = (CONFIG && CONFIG.pricing) ? CONFIG.pricing : {};
 
+    // Calculate based on rate type and vehicle type
     if (vehicleType === 'carro') {
-        if (rateType === 'hour') total = pricing.carHourlyRate || 2500;
-        else if (rateType === 'day') total = pricing.carDayRate || 20000;
-        else if (rateType === 'month') total = pricing.carMonthRate || 400000;
+        if (rateType === 'hour') {
+            quantity = durationInfo.hours;
+            total = (pricing.carHourlyRate || 2500) * quantity;
+        } else if (rateType === 'day') {
+            quantity = durationInfo.days;
+            total = (pricing.carDayRate || 20000) * quantity;
+        } else if (rateType === 'month') {
+            quantity = durationInfo.months;
+            total = (pricing.carMonthRate || 400000) * quantity;
+        }
     } else if (vehicleType === 'moto') {
-        if (rateType === 'hour') total = pricing.motoHourlyRate || 1500;
-        else if (rateType === 'day') total = pricing.motoDayRate || 12000;
-        else if (rateType === 'month') total = pricing.motoMonthRate || 250000;
+        if (rateType === 'hour') {
+            quantity = durationInfo.hours;
+            total = (pricing.motoHourlyRate || 1500) * quantity;
+        } else if (rateType === 'day') {
+            quantity = durationInfo.days;
+            total = (pricing.motoDayRate || 12000) * quantity;
+        } else if (rateType === 'month') {
+            quantity = durationInfo.months;
+            total = (pricing.motoMonthRate || 250000) * quantity;
+        }
     }
 
     const totalEl = document.getElementById('total');
-    if (totalEl) totalEl.value = total;
+    if (totalEl) totalEl.value = Math.round(total);
+}
+
+// Helper function to calculate duration between two dates
+function calculateDuration(startDate, endDate) {
+    const diffMs = endDate - startDate;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    const diffMonths = diffDays / 30;
+
+    return {
+        totalHours: diffHours,
+        hours: Math.ceil(diffHours), // Round up hours
+        days: Math.ceil(diffDays),   // Round up days
+        months: Math.ceil(diffMonths) // Round up months
+    };
 }
 
 function setDefaultDates() {
@@ -617,7 +682,7 @@ async function handleRegistration() {
             estado_pago: false
         };
 
-        const { error } = await supabase.from('tickets').insert([formData]);
+        const { error } = await db.from('tickets').insert([formData]);
 
         if (error) throw error;
 
