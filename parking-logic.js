@@ -833,6 +833,9 @@ async function exportReportsToPDF() {
 function setupAdminPanel() {
     const btnSave = document.getElementById('btn-save-config');
     if (btnSave) btnSave.onclick = saveAdminConfig;
+
+    const btnReset = document.getElementById('btn-factory-reset');
+    if (btnReset) btnReset.onclick = performFactoryReset;
 }
 
 function loadAdminPanelValues() {
@@ -848,6 +851,43 @@ function saveAdminConfig() {
     // Save to local storage
     localStorage.setItem('admin_config', JSON.stringify(CONFIG));
     showSuccessMessage('💾 Configuración guardada');
+}
+
+async function performFactoryReset() {
+    if (!isAdminAuthenticated) return;
+
+    // Confirm 1
+    if (!confirm('⚠️ ¿ESTÁS SEGURO?\n\nEsto borrará TODO el historial de vehículos y registros.\nEsta acción NO se puede deshacer.')) {
+        return;
+    }
+
+    // Confirm 2
+    const validation = prompt('Para confirmar, escribe: BORRAR');
+    if (validation !== 'BORRAR') {
+        alert('Acción cancelada. El código de confirmación no coincide.');
+        return;
+    }
+
+    try {
+        console.log('🗑️ Starting Factory Reset...');
+
+        // Delete all data. 
+        // Note: Supabase requires a WHERE clause for delete(). 
+        // We use neq('id', 0) assuming UUIDs or just a condition that matches all.
+        const { error } = await db
+            .from('tickets')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // Hack to delete all
+
+        if (error) throw error;
+
+        alert('✅ SISTEMA REINICIADO CORRECTAMENTE\n\nTodos los datos han sido eliminados.');
+        location.reload();
+
+    } catch (error) {
+        console.error('Error in factory reset:', error);
+        alert('❌ Error al reiniciar: ' + error.message);
+    }
 }
 
 // ===== UTILS =====
