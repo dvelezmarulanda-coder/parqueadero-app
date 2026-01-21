@@ -1032,7 +1032,10 @@ body {
     max-width: 500px;
     width: 90%;
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .payment-modal-header {
@@ -1049,8 +1052,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 .payment-modal-header h2 {
@@ -1062,8 +1072,10 @@ body {
 }
 
 .payment-modal-body {
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
     background: var(--color-card-bg);
+    overflow-y: auto;
+    flex: 1;
 }
 
 .payment-detail {
@@ -1157,19 +1169,19 @@ body {
         width: 95%;
         max-width: none;
     }
-    
+
     .payment-total-value {
         font-size: 2rem;
     }
-    
+
     .payment-modal-actions {
         grid-template-columns: 1fr;
     }
-    
+
     .payment-detail {
         font-size: 1rem;
     }
-    
+
     .payment-value {
         font-size: 1.1rem;
     }
