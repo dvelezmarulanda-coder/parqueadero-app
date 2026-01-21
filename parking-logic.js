@@ -571,21 +571,15 @@ async function markAsPaid(ticketId) {
         const priceDetails = calculatePrice(ticket.tipo_vehiculo, rateType, entryDate, now);
         const finalTotal = priceDetails.total;
 
-        // 3. Confirm with User (Showing the calculated price)
-        const message = `
-⚠️ *Confirmar Salida*
----------------------------
-Placa: ${ticket.placa}
-Tiempo: ${priceDetails.durationInfo.hours} horas (aprox)
-Tarifa: ${rateType}
----------------------------
-💰 *TOTAL A PAGAR: ${formatCurrency(finalTotal)}*
-(El valor se ha actualizado según el tiempo real)
+        // 3. Show Custom Modal with payment details
+        const confirmed = await showPaymentModal({
+            placa: ticket.placa,
+            tiempo: `${priceDetails.durationInfo.hours} horas (aprox)`,
+            tarifa: rateType === 'hour' ? 'Por Hora' : rateType === 'day' ? 'Por Día' : 'Por Mes',
+            total: finalTotal
+        });
 
-¿Confirmar pago y generar recibo?
-        `.trim();
-
-        if (!confirm(message)) return;
+        if (!confirmed) return;
 
         // 4. Update DB
         const { error } = await db
@@ -1029,5 +1023,32 @@ function showDemoModeToast() {
     document.body.appendChild(toast);
 }
 
+// ===== CUSTOM PAYMENT MODAL FUNCTIONS =====
+let paymentModalResolve = null;
+
+function showPaymentModal(data) {
+    return new Promise((resolve) => {
+        paymentModalResolve = resolve;
+
+        // Populate modal with data
+        document.getElementById('modal-placa').textContent = data.placa;
+        document.getElementById('modal-tiempo').textContent = data.tiempo;
+        document.getElementById('modal-tarifa').textContent = data.tarifa;
+        document.getElementById('modal-total').textContent = formatCurrency(data.total);
+
+        // Show modal
+        document.getElementById('payment-confirm-modal').style.display = 'flex';
+    });
+}
+
+function closePaymentModal(confirmed) {
+    document.getElementById('payment-confirm-modal').style.display = 'none';
+    if (paymentModalResolve) {
+        paymentModalResolve(confirmed);
+        paymentModalResolve = null;
+    }
+}
+
 // Make global
 window.markAsPaid = markAsPaid;
+window.closePaymentModal = closePaymentModal;

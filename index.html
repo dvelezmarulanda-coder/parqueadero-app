@@ -441,13 +441,58 @@
         </div>
     </div>
 
+    <!-- Custom Payment Confirmation Modal -->
+    <div id="payment-confirm-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content payment-modal">
+            <div class="payment-modal-header">
+                <div class="payment-icon">⚠️</div>
+                <h2>Confirmar Salida</h2>
+            </div>
+
+            <div class="payment-modal-body">
+                <div class="payment-detail">
+                    <span class="payment-label">Placa:</span>
+                    <span class="payment-value" id="modal-placa">-</span>
+                </div>
+                <div class="payment-detail">
+                    <span class="payment-label">Tiempo:</span>
+                    <span class="payment-value" id="modal-tiempo">-</span>
+                </div>
+                <div class="payment-detail">
+                    <span class="payment-label">Tarifa:</span>
+                    <span class="payment-value" id="modal-tarifa">-</span>
+                </div>
+
+                <div class="payment-total">
+                    <div class="payment-total-label">💰 TOTAL A PAGAR</div>
+                    <div class="payment-total-value" id="modal-total">$ 0</div>
+                    <div class="payment-note">El valor se ha actualizado según el tiempo real</div>
+                </div>
+
+                <div class="payment-question">
+                    ¿Confirmar pago y generar recibo?
+                </div>
+            </div>
+
+            <div class="payment-modal-actions">
+                <button class="btn btn-secondary btn-large" onclick="closePaymentModal(false)">
+                    Cancelar
+                </button>
+                <button class="btn btn-success btn-large" onclick="closePaymentModal(true)">
+                    ✅ Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <script src="debug_overlay.js"></script>
     <script src="./config.js"></script>
-    <script src="./parking-logic.js?v=2"></script>
+    <script src="./parking-logic.js?v=3"></script>
 </body>
 
 </html>
