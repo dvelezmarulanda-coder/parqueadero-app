@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     puesto TEXT NOT NULL,
     fecha_ingreso TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     fecha_salida_estimada TIMESTAMP WITH TIME ZONE NOT NULL,
+    fecha_salida_real TIMESTAMP WITH TIME ZONE,
+    rate_type TEXT DEFAULT 'hour',
     estado_pago BOOLEAN DEFAULT FALSE,
     total NUMERIC(10, 2) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

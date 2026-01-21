@@ -485,17 +485,136 @@ function getAlertClass(fechaSalida) {
     return '';
 }
 
-async function markAsPaid(ticketId) {
-    if (!confirm('¿Confirmar que el cliente ha pagado?')) return;
+// ===== NEW HELPER: Reusable Price Calculation =====
+function calculatePrice(vehicleType, rateType, startDate, endDate) {
+    const durationInfo = calculateDuration(startDate, endDate);
+    let total = 0;
+    let quantity = 0;
+    const pricing = (CONFIG && CONFIG.pricing) ? CONFIG.pricing : {};
 
+    // Logic replicated from original calculateTotal but decoupled from DOM
+    if (vehicleType === 'carro') {
+        if (rateType === 'hour') {
+            quantity = durationInfo.hours;
+            total = (pricing.carHourlyRate || 2500) * quantity;
+        } else if (rateType === 'day') {
+            quantity = durationInfo.days;
+            total = (pricing.carDayRate || 20000) * quantity;
+        } else if (rateType === 'month') {
+            quantity = durationInfo.months;
+            total = (pricing.carMonthRate || 400000) * quantity;
+        }
+    } else if (vehicleType === 'moto') {
+        if (rateType === 'hour') {
+            quantity = durationInfo.hours;
+            total = (pricing.motoHourlyRate || 1500) * quantity;
+        } else if (rateType === 'day') {
+            quantity = durationInfo.days;
+            total = (pricing.motoDayRate || 12000) * quantity;
+        } else if (rateType === 'month') {
+            quantity = durationInfo.months;
+            total = (pricing.motoMonthRate || 250000) * quantity;
+        }
+    }
+
+    return { total: Math.round(total), quantity, durationInfo };
+}
+
+// ===== NEW HELPER: WhatsApp Receipt Generator =====
+function generateReceiptDetails(ticket, realExitDate, finalTotal) {
+    const duration = calculateDuration(new Date(ticket.fecha_ingreso), realExitDate);
+    const timeStr = `${duration.days > 0 ? duration.days + 'd ' : ''}${duration.hours % 24}h ${Math.floor((duration.totalHours * 60) % 60)}m`;
+
+    // Receipt Text
+    const text = `
+🧾 *RECIBO DE PARQUEADERO*
+--------------------------------
+🅿️ *Placa:* ${ticket.placa}
+👤 *Cliente:* ${ticket.nombre_cliente}
+📅 *Ingreso:* ${formatDateTime(ticket.fecha_ingreso)}
+🏁 *Salida:* ${formatDateTime(realExitDate.toISOString())}
+⏱️ *Tiempo:* ${timeStr}
+💲 *TOTAL PAGADO:* ${formatCurrency(finalTotal)}
+--------------------------------
+¡Gracias por confiar en nosotros!
+`.trim();
+
+    // WhatsApp URL
+    // Default to Colombia (+57) if no code provided
+    let phone = ticket.celular.replace(/\D/g, '');
+    if (!phone.startsWith('57') && phone.length === 10) phone = '57' + phone;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+
+    return { text, url };
+}
+
+async function markAsPaid(ticketId) {
     try {
+        // 1. Get current ticket details to ensure we have rate_type
+        const { data: tickets, error: fetchError } = await db
+            .from('tickets')
+            .select('*')
+            .eq('id', ticketId);
+
+        if (fetchError) throw fetchError;
+        const ticket = tickets && tickets.length > 0 ? tickets[0] : null;
+        if (!ticket) throw new Error("Ticket no encontrado");
+
+        // 2. Calculate Real Price based on NOW
+        const now = new Date();
+        const entryDate = new Date(ticket.fecha_ingreso);
+
+        // Fallback to 'hour' if rate_type is missing (legacy records)
+        const rateType = ticket.rate_type || 'hour';
+
+        const priceDetails = calculatePrice(ticket.tipo_vehiculo, rateType, entryDate, now);
+        const finalTotal = priceDetails.total;
+
+        // 3. Confirm with User (Showing the calculated price)
+        const message = `
+⚠️ *Confirmar Salida*
+---------------------------
+Placa: ${ticket.placa}
+Tiempo: ${priceDetails.durationInfo.hours} horas (aprox)
+Tarifa: ${rateType}
+---------------------------
+💰 *TOTAL A PAGAR: ${formatCurrency(finalTotal)}*
+(El valor se ha actualizado según el tiempo real)
+
+¿Confirmar pago y generar recibo?
+        `.trim();
+
+        if (!confirm(message)) return;
+
+        // 4. Update DB
         const { error } = await db
             .from('tickets')
-            .update({ estado_pago: true })
+            .update({
+                estado_pago: true,
+                total: finalTotal,
+                fecha_salida_real: now.toISOString()
+            })
             .eq('id', ticketId);
 
         if (error) throw error;
-        showSuccessMessage('Ticket marcado como pagado');
+
+        // 5. Generate Receipt & Open WhatsApp
+        const receipt = generateReceiptDetails(ticket, now, finalTotal);
+
+        // Open WhatsApp in new tab
+        // Open WhatsApp in new tab
+        const waWindow = window.open(receipt.url, '_blank');
+
+        if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
+            alert('⚠️ VENTANA BLOQUEADA\n\nEl navegador bloqueó la ventana de WhatsApp.\n\nPor favor permite las ventanas emergentes (pop-ups) para este sitio.');
+            // Fallback: redirects current window if user prefers, but that closes the app.
+            if (confirm('¿Deseas abrir WhatsApp en esta misma pestaña? (La app se recargará)')) {
+                window.location.href = receipt.url;
+            }
+        }
+
+        showSuccessMessage('Ticket pagado y recibo generado 🧾');
         await loadDashboard();
 
     } catch (error) {
@@ -592,32 +711,11 @@ function calculateTotal() {
     const pricing = (CONFIG && CONFIG.pricing) ? CONFIG.pricing : {};
 
     // Calculate based on rate type and vehicle type
-    if (vehicleType === 'carro') {
-        if (rateType === 'hour') {
-            quantity = durationInfo.hours;
-            total = (pricing.carHourlyRate || 2500) * quantity;
-        } else if (rateType === 'day') {
-            quantity = durationInfo.days;
-            total = (pricing.carDayRate || 20000) * quantity;
-        } else if (rateType === 'month') {
-            quantity = durationInfo.months;
-            total = (pricing.carMonthRate || 400000) * quantity;
-        }
-    } else if (vehicleType === 'moto') {
-        if (rateType === 'hour') {
-            quantity = durationInfo.hours;
-            total = (pricing.motoHourlyRate || 1500) * quantity;
-        } else if (rateType === 'day') {
-            quantity = durationInfo.days;
-            total = (pricing.motoDayRate || 12000) * quantity;
-        } else if (rateType === 'month') {
-            quantity = durationInfo.months;
-            total = (pricing.motoMonthRate || 250000) * quantity;
-        }
-    }
+    // Use the decoupled calculation function
+    const priceDetails = calculatePrice(vehicleType, rateType, fechaIngreso, fechaSalida);
 
     const totalEl = document.getElementById('total');
-    if (totalEl) totalEl.value = Math.round(total);
+    if (totalEl) totalEl.value = priceDetails.total;
 }
 
 // Helper function to calculate duration between two dates
@@ -665,6 +763,7 @@ async function handleRegistration() {
             puesto: document.getElementById('puesto').value.trim().toUpperCase(),
             fecha_ingreso: new Date(document.getElementById('fecha-ingreso').value).toISOString(),
             fecha_salida_estimada: new Date(document.getElementById('fecha-salida').value).toISOString(),
+            rate_type: document.querySelector('input[name="rate_type"]:checked').value,
             total: parseFloat(totalEl.value),
             estado_pago: false
         };
