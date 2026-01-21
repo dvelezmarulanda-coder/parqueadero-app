@@ -544,7 +544,11 @@ function generateReceiptDetails(ticket, realExitDate, finalTotal) {
     let phone = ticket.celular.replace(/\D/g, '');
     if (!phone.startsWith('57') && phone.length === 10) phone = '57' + phone;
 
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    // Use whatsapp:// scheme for mobile devices, wa.me as fallback for desktop
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const url = isMobile
+        ? `whatsapp://send?phone=${phone}&text=${encodeURIComponent(text)}`
+        : `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 
     return { text, url };
 }
