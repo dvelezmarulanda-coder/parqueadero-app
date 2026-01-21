@@ -1168,21 +1168,56 @@ body {
     .payment-modal {
         width: 95%;
         max-width: none;
+        max-height: 85vh;
+    }
+
+    .payment-modal-header {
+        padding: var(--spacing-md);
+    }
+
+    .payment-modal-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .payment-icon {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .payment-modal-body {
+        padding: var(--spacing-md);
     }
 
     .payment-total-value {
-        font-size: 2rem;
+        font-size: 1.75rem;
+    }
+
+    .payment-total {
+        padding: var(--spacing-md);
+        margin: var(--spacing-md) 0;
     }
 
     .payment-modal-actions {
         grid-template-columns: 1fr;
+        padding: var(--spacing-md);
     }
 
     .payment-detail {
-        font-size: 1rem;
+        font-size: 0.95rem;
+        padding: var(--spacing-sm) 0;
     }
 
     .payment-value {
-        font-size: 1.1rem;
+        font-size: 1rem;
+    }
+
+    .payment-question {
+        font-size: 1rem;
+        margin-top: var(--spacing-sm);
+    }
+
+    .btn-large {
+        min-height: 48px;
+        font-size: 1rem;
     }
 }
