@@ -361,10 +361,27 @@ async function loadDashboard() {
         console.log('Dashboard Data Loaded:', allTickets.length);
 
     } catch (error) {
-        console.error('Error loading dashboard:', error);
+        // Supabase errors are objects like { message, details, hint, code }
+        // Extract the real message instead of showing [object Object]
+        const errorMsg = error?.message || error?.details || JSON.stringify(error) || 'Error desconocido';
+        console.error('Error loading dashboard:', errorMsg);
+
+        // Auto-fallback to demo mode if Supabase connection fails
+        if (!window.DEMO_MODE) {
+            console.warn('⚠️ Supabase falló. Cambiando a modo DEMO automáticamente.');
+            window.DEMO_MODE = true;
+            // Replace db reference with mock
+            window._supabaseClient = supabaseClient;
+            Object.assign(db, new MockSupabase());
+            showDemoModeToast();
+            // Retry loading with mock data
+            await loadDashboard();
+            return;
+        }
+
         const container = document.getElementById('active-tickets');
         if (container) {
-            container.innerHTML = `<div class="alert alert-danger">Error cargando datos: ${error.message}. <br/> Modo Demo activado.</div>`;
+            container.innerHTML = `<div class="alert alert-danger">❌ Error cargando datos: ${errorMsg}<br/>Revisa la conexión a Supabase o recarga la página.</div>`;
         }
     }
 }
@@ -485,45 +502,71 @@ function getAlertClass(fechaSalida) {
     return '';
 }
 
-// ===== NEW HELPER: Reusable Price Calculation =====
+// ===== PRICE CALCULATION: Fixed Block Rates + Overtime =====
 function calculatePrice(vehicleType, rateType, startDate, endDate) {
-    const durationInfo = calculateDuration(startDate, endDate);
-    let total = 0;
-    let quantity = 0;
     const pricing = (CONFIG && CONFIG.pricing) ? CONFIG.pricing : {};
+    let baseTotal = 0;
 
-    // Logic replicated from original calculateTotal but decoupled from DOM
-    if (vehicleType === 'carro') {
-        if (rateType === 'hour') {
-            quantity = durationInfo.hours;
-            total = (pricing.carHourlyRate || 2500) * quantity;
-        } else if (rateType === 'day') {
-            quantity = durationInfo.days;
-            total = (pricing.carDayRate || 20000) * quantity;
-        } else if (rateType === 'month') {
-            quantity = durationInfo.months;
-            total = (pricing.carMonthRate || 400000) * quantity;
+    // 1. Map rate_type to pricing key per vehicle
+    const rateMap = {
+        carro: {
+            min:  pricing.carMinRate  || 5000,
+            '6h': pricing.car6hRate   || 8000,
+            '12h':pricing.car12hRate  || 15000,
+            '24h':pricing.car24hRate  || 25000,
+            minute: pricing.carMinuteRate || 100
+        },
+        moto: {
+            min:  pricing.motoMinRate  || 3000,
+            '6h': pricing.moto6hRate   || 5000,
+            '12h':pricing.moto12hRate  || 9000,
+            '24h':pricing.moto24hRate  || 15000,
+            minute: pricing.motoMinuteRate || 60
         }
-    } else if (vehicleType === 'moto') {
-        if (rateType === 'hour') {
-            quantity = durationInfo.hours;
-            total = (pricing.motoHourlyRate || 1500) * quantity;
-        } else if (rateType === 'day') {
-            quantity = durationInfo.days;
-            total = (pricing.motoDayRate || 12000) * quantity;
-        } else if (rateType === 'month') {
-            quantity = durationInfo.months;
-            total = (pricing.motoMonthRate || 250000) * quantity;
+    };
+
+    const vehicleRates = rateMap[vehicleType] || rateMap['carro'];
+    baseTotal = vehicleRates[rateType] || vehicleRates['min'];
+    const minuteRate = vehicleRates.minute;
+
+    // 2. Calculate duration
+    const durationInfo = (startDate && endDate)
+        ? calculateDuration(startDate, endDate)
+        : { totalHours: 0, hours: 0, days: 0, months: 0, totalMinutes: 0, minutes: 0 };
+
+    // 3. Check for overtime
+    let extraMinutes = 0;
+    let extraTotal = 0;
+    
+    if (startDate && endDate && durationInfo.totalMinutes > 0) {
+        const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
+        const allowedHours = hoursMap[rateType] || 3;
+        const allowedMinutes = allowedHours * 60;
+        
+        // 5 minutes grace period
+        if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
+            extraMinutes = durationInfo.totalMinutes - allowedMinutes;
+            extraTotal = extraMinutes * minuteRate;
         }
     }
 
-    return { total: Math.round(total), quantity, durationInfo };
+    const finalTotal = baseTotal + extraTotal;
+
+    return { 
+        total: Math.round(finalTotal), 
+        baseTotal: Math.round(baseTotal),
+        extraTotal: Math.round(extraTotal),
+        extraMinutes: extraMinutes,
+        minuteRate: minuteRate,
+        quantity: 1, 
+        durationInfo 
+    };
 }
 
 // ===== NEW HELPER: WhatsApp Receipt Generator =====
 function generateReceiptDetails(ticket, realExitDate, finalTotal) {
     const duration = calculateDuration(new Date(ticket.fecha_ingreso), realExitDate);
-    const timeStr = `${duration.days > 0 ? duration.days + 'd ' : ''}${duration.hours % 24}h ${Math.floor((duration.totalHours * 60) % 60)}m`;
+    const timeStr = `${duration.days > 0 ? duration.days + 'd ' : ''}${duration.hours}h ${duration.minutes}m`;
 
     // Receipt Text
     const text = `
@@ -576,10 +619,18 @@ async function markAsPaid(ticketId) {
         const finalTotal = priceDetails.total;
 
         // 3. Show Custom Modal with payment details
+        const rateLabels = { min: 'Tarifa Mínima', '6h': '6 Horas', '12h': '12 Horas', '24h': '24 Horas' };
+        
+        const timeStr = `${priceDetails.durationInfo.days > 0 ? priceDetails.durationInfo.days + 'd ' : ''}${priceDetails.durationInfo.hours}h ${priceDetails.durationInfo.minutes}m`;
+
         const confirmed = await showPaymentModal({
             placa: ticket.placa,
-            tiempo: `${priceDetails.durationInfo.hours} horas (aprox)`,
-            tarifa: rateType === 'hour' ? 'Por Hora' : rateType === 'day' ? 'Por Día' : 'Por Mes',
+            tiempo: timeStr,
+            tarifa: rateLabels[rateType] || rateType,
+            baseTotal: priceDetails.baseTotal,
+            extraTotal: priceDetails.extraTotal,
+            extraMinutes: priceDetails.extraMinutes,
+            minuteRate: priceDetails.minuteRate,
             total: finalTotal
         });
 
@@ -645,89 +696,95 @@ function setupRegistrationForm() {
         await handleRegistration();
     };
 
-    // Listen to vehicle type and rate type changes
-    const inputs = form.querySelectorAll('input[name="tipo_vehiculo"], input[name="rate_type"]');
-    inputs.forEach(input => {
-        input.onchange = calculateTotal;
-        input.oninput = calculateTotal;
+    // Re-calculate prices when changing vehicle type
+    const vehicleTypeArr = document.getElementsByName('tipo_vehiculo');
+    vehicleTypeArr.forEach(radio => {
+        radio.addEventListener('change', () => {
+            updateExitDateFromRate();
+            updateRatePricesDisplay();
+        });
     });
 
-    // Listen to date changes for automatic calculation
+    // Re-calculate prices and dates when changing rate block
+    const rateTypeArr = document.getElementsByName('rate_type');
+    rateTypeArr.forEach(radio => {
+        radio.addEventListener('change', () => {
+            updateExitDateFromRate();
+            updateRatePricesDisplay();
+        });
+    });
+
+    // Manual date change still recalculates exit date
     const fechaIngreso = document.getElementById('fecha-ingreso');
-    const fechaSalida = document.getElementById('fecha-salida');
     if (fechaIngreso) {
-        fechaIngreso.onchange = calculateTotal;
-        fechaIngreso.oninput = calculateTotal;
-    }
-    if (fechaSalida) {
-        fechaSalida.onchange = calculateTotal;
-        fechaSalida.oninput = calculateTotal;
+        fechaIngreso.onchange = () => {
+            updateExitDateFromRate();
+        };
     }
 
-    calculateTotal();
+    updateExitDateFromRate();
+    updateRatePricesDisplay();
 }
 
-function calculateTotal() {
+// Auto-calculate exit date based on selected rate block
+function updateExitDateFromRate() {
+    const rateTypeArr = document.getElementsByName('rate_type');
+    let rateType = 'min';
+    for (let r of rateTypeArr) if (r.checked) rateType = r.value;
+
+    const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
+    const hours = hoursMap[rateType] || 3;
+
+    const fechaIngresoEl = document.getElementById('fecha-ingreso');
+    const fechaSalidaEl = document.getElementById('fecha-salida');
+    if (!fechaIngresoEl || !fechaIngresoEl.value) return;
+
+    const ingreso = new Date(fechaIngresoEl.value);
+    const salida = new Date(ingreso.getTime() + hours * 60 * 60 * 1000);
+    const toLocalISO = (d) => {
+        const offset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+    };
+    if (fechaSalidaEl) fechaSalidaEl.value = toLocalISO(salida);
+}
+
+// Update prices displayed directly on the rate buttons
+function updateRatePricesDisplay() {
     const vehicleTypeArr = document.getElementsByName('tipo_vehiculo');
     let vehicleType = null;
     for (let r of vehicleTypeArr) if (r.checked) vehicleType = r.value;
 
-    const rateTypeArr = document.getElementsByName('rate_type');
-    let rateType = null;
-    for (let r of rateTypeArr) if (r.checked) rateType = r.value;
+    if (!vehicleType) return;
 
-    if (!vehicleType || !rateType) {
-        const totalEl = document.getElementById('total');
-        if (totalEl) totalEl.value = '';
-        return;
-    }
-
-    // Get dates
-    const fechaIngresoEl = document.getElementById('fecha-ingreso');
-    const fechaSalidaEl = document.getElementById('fecha-salida');
-
-    if (!fechaIngresoEl || !fechaSalidaEl || !fechaIngresoEl.value || !fechaSalidaEl.value) {
-        const totalEl = document.getElementById('total');
-        if (totalEl) totalEl.value = '';
-        return;
-    }
-
-    const fechaIngreso = new Date(fechaIngresoEl.value);
-    const fechaSalida = new Date(fechaSalidaEl.value);
-
-    // Calculate duration
-    const durationInfo = calculateDuration(fechaIngreso, fechaSalida);
-
-    if (durationInfo.totalHours <= 0) {
-        const totalEl = document.getElementById('total');
-        if (totalEl) totalEl.value = 0;
-        return;
-    }
-
-    let total = 0;
-    let quantity = 0;
-    const pricing = (CONFIG && CONFIG.pricing) ? CONFIG.pricing : {};
-
-    // Calculate based on rate type and vehicle type
-    // Use the decoupled calculation function
-    const priceDetails = calculatePrice(vehicleType, rateType, fechaIngreso, fechaSalida);
-
-    const totalEl = document.getElementById('total');
-    if (totalEl) totalEl.value = priceDetails.total;
+    // Get prices for all 4 block types for the selected vehicle type
+    const rates = ['min', '6h', '12h', '24h'];
+    rates.forEach(rateType => {
+        const priceDetails = calculatePrice(vehicleType, rateType, null, null);
+        const priceEl = document.getElementById(`price-${rateType}`);
+        if (priceEl) {
+            priceEl.textContent = formatCurrency(priceDetails.total);
+        }
+    });
 }
 
 // Helper function to calculate duration between two dates
 function calculateDuration(startDate, endDate) {
-    const diffMs = endDate - startDate;
-    const diffHours = diffMs / (1000 * 60 * 60);
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    const diffMonths = diffDays / 30;
+    const diffMs = Math.max(0, endDate - startDate);
+    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const remainingMinutesAfterDays = totalMinutes % (60 * 24);
+    
+    const hours = Math.floor(remainingMinutesAfterDays / 60);
+    const minutes = remainingMinutesAfterDays % 60;
 
     return {
-        totalHours: diffHours,
-        hours: Math.ceil(diffHours), // Round up hours
-        days: Math.ceil(diffDays),   // Round up days
-        months: Math.ceil(diffMonths) // Round up months
+        totalHours: diffMs / (1000 * 60 * 60),
+        totalMinutes: totalMinutes,
+        days: days,
+        hours: hours,
+        minutes: minutes,
+        months: 0
     };
 }
 
@@ -752,17 +809,29 @@ async function handleRegistration() {
     if (messageContainer) messageContainer.innerHTML = '';
 
     try {
-        const totalEl = document.getElementById('total');
+        const fechaIngresoEl = document.getElementById('fecha-ingreso').value;
+        const fechaIngreso = new Date(fechaIngresoEl);
+        
+        // Calculate the simulated estimated exit date based on the chosen rate
+        const rateType = document.querySelector('input[name="rate_type"]:checked').value;
+        const vehicleType = document.querySelector('input[name="tipo_vehiculo"]:checked').value;
+        const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
+        const blockHours = hoursMap[rateType] || 3;
+        const fechaSalidaEstimada = new Date(fechaIngreso.getTime() + blockHours * 60 * 60 * 1000);
+
+        // Get total for the ticket
+        const priceDetails = calculatePrice(vehicleType, rateType, null, null);
+
         const formData = {
             placa: document.getElementById('placa').value.trim().toUpperCase(),
             nombre_cliente: document.getElementById('nombre').value.trim(),
             celular: document.getElementById('celular').value.trim(),
-            tipo_vehiculo: document.querySelector('input[name="tipo_vehiculo"]:checked').value,
+            tipo_vehiculo: vehicleType,
             puesto: document.getElementById('puesto').value.trim().toUpperCase(),
-            fecha_ingreso: new Date(document.getElementById('fecha-ingreso').value).toISOString(),
-            fecha_salida_estimada: new Date(document.getElementById('fecha-salida').value).toISOString(),
-            rate_type: document.querySelector('input[name="rate_type"]:checked').value,
-            total: parseFloat(totalEl.value),
+            fecha_ingreso: fechaIngreso.toISOString(),
+            fecha_salida_estimada: fechaSalidaEstimada.toISOString(),
+            rate_type: rateType,
+            total: priceDetails.total,
             estado_pago: false
         };
 
@@ -778,7 +847,7 @@ async function handleRegistration() {
 
         document.getElementById('registro-form').reset();
         setDefaultDates();
-        calculateTotal();
+        updateRatePricesDisplay();
 
     } catch (error) {
         console.error('Error registering vehicle:', error);
@@ -936,18 +1005,44 @@ function setupAdminPanel() {
 }
 
 function loadAdminPanelValues() {
-    if (!CONFIG || !CONFIG.parking) return;
-    if (document.getElementById('admin-total-spaces')) document.getElementById('admin-total-spaces').value = CONFIG.parking.totalSpaces;
-    // ... load other values as needed
+    if (!CONFIG || !CONFIG.pricing) return;
+    const p = CONFIG.pricing;
+    const parking = CONFIG.parking || {};
+    const alerts = CONFIG.alerts || {};
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    set('admin-total-spaces',  parking.totalSpaces  || 50);
+    set('admin-car-min-rate',  p.carMinRate   || 5000);
+    set('admin-car-6h-rate',   p.car6hRate    || 8000);
+    set('admin-car-12h-rate',  p.car12hRate   || 15000);
+    set('admin-car-24h-rate',  p.car24hRate   || 25000);
+    set('admin-car-minute-rate', p.carMinuteRate || 100);
+    set('admin-moto-min-rate', p.motoMinRate  || 3000);
+    set('admin-moto-6h-rate',  p.moto6hRate   || 5000);
+    set('admin-moto-12h-rate', p.moto12hRate  || 9000);
+    set('admin-moto-24h-rate', p.moto24hRate  || 15000);
+    set('admin-moto-minute-rate', p.motoMinuteRate || 60);
+    set('admin-warning-minutes', alerts.warningMinutes || 60);
 }
 
 function saveAdminConfig() {
-    const totalSpaces = parseInt(document.getElementById('admin-total-spaces').value) || 50;
-    CONFIG.parking.totalSpaces = totalSpaces;
+    const get = (id, fallback) => parseInt(document.getElementById(id)?.value) || fallback;
 
-    // Save to local storage
+    CONFIG.parking.totalSpaces = get('admin-total-spaces', 50);
+    CONFIG.alerts.warningMinutes = get('admin-warning-minutes', 60);
+    CONFIG.pricing.carMinRate   = get('admin-car-min-rate',  5000);
+    CONFIG.pricing.car6hRate    = get('admin-car-6h-rate',   8000);
+    CONFIG.pricing.car12hRate   = get('admin-car-12h-rate',  15000);
+    CONFIG.pricing.car24hRate   = get('admin-car-24h-rate',  25000);
+    CONFIG.pricing.carMinuteRate = get('admin-car-minute-rate', 100);
+    CONFIG.pricing.motoMinRate  = get('admin-moto-min-rate', 3000);
+    CONFIG.pricing.moto6hRate   = get('admin-moto-6h-rate',  5000);
+    CONFIG.pricing.moto12hRate  = get('admin-moto-12h-rate', 9000);
+    CONFIG.pricing.moto24hRate  = get('admin-moto-24h-rate', 15000);
+    CONFIG.pricing.motoMinuteRate = get('admin-moto-minute-rate', 60);
+
     localStorage.setItem('admin_config', JSON.stringify(CONFIG));
-    showSuccessMessage('💾 Configuración guardada');
+    showSuccessMessage('💾 Configuración guardada exitosamente');
 }
 
 async function performFactoryReset() {
@@ -1039,6 +1134,22 @@ function showPaymentModal(data) {
         document.getElementById('modal-tiempo').textContent = data.tiempo;
         document.getElementById('modal-tarifa').textContent = data.tarifa;
         document.getElementById('modal-total').textContent = formatCurrency(data.total);
+        document.getElementById('modal-base').textContent = formatCurrency(data.baseTotal || data.total);
+        
+        const overtimeRow = document.getElementById('modal-overtime-row');
+        const overtimeValue = document.getElementById('modal-overtime');
+        const noteEl = document.getElementById('modal-note');
+        
+        if (data.extraMinutes > 0) {
+            overtimeRow.style.display = 'flex';
+            overtimeValue.textContent = `${data.extraMinutes} min × ${formatCurrency(data.minuteRate)} = ${formatCurrency(data.extraTotal)}`;
+            noteEl.textContent = 'El valor incluye recargo por tiempo extra.';
+            noteEl.style.color = 'var(--color-warning)';
+        } else {
+            overtimeRow.style.display = 'none';
+            noteEl.textContent = 'Tarifa fija por bloque contratado.';
+            noteEl.style.color = 'var(--color-text-muted)';
+        }
 
         // Show modal
         document.getElementById('payment-confirm-modal').style.display = 'flex';

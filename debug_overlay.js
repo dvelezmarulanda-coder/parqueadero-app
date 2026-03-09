@@ -49,7 +49,14 @@
     // Override Console.error
     const originalError = console.error;
     console.error = function (...args) {
-        logError('Console Error', args.join(' '));
+        const msg = args.map(a => {
+            if (a instanceof Error) return a.message || String(a);
+            if (typeof a === 'object' && a !== null) {
+                try { return JSON.stringify(a); } catch { return String(a); }
+            }
+            return String(a);
+        }).join(' ');
+        logError('Console Error', msg);
         originalError.apply(console, args);
     };
 

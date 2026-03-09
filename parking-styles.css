@@ -532,7 +532,7 @@ body {
 /* ===== RATE SELECTOR ===== */
 .rate-selector {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-md);
 }
 
@@ -580,6 +580,23 @@ body {
     font-weight: 600;
     font-size: var(--font-size-base);
     color: var(--color-text);
+}
+
+.rate-sublabel {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+    font-style: italic;
+}
+
+.rate-price {
+    margin-top: var(--spacing-sm);
+    padding: 2px 8px;
+    background-color: rgba(9, 132, 227, 0.1);
+    color: var(--color-blue);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 700;
 }
 
 .form-help {

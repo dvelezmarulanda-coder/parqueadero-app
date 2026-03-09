@@ -28,13 +28,19 @@ window.CONFIG = {
         dashboardInterval: 30000
     },
 
-    // Pricing
+    // Pricing - Tarifas Fijas por Bloque de Tiempo
     pricing: {
-        carHourlyRate: 2500,
-        motoHourlyRate: 1500,
-        carDayRate: 20000,
-        motoDayRate: 12000,
-        carMonthRate: 400000,
-        motoMonthRate: 250000
+        // Carro
+        carMinRate:  5000,   // Tarifa Mínima (< 3 horas)
+        car6hRate:   8000,   // 6 Horas
+        car12hRate:  15000,  // 12 Horas
+        car24hRate:  25000,  // 24 Horas
+        carMinuteRate: 100,  // Tarifa por minuto extra - Carro
+        // Moto
+        motoMinRate: 3000,   // Tarifa Mínima (< 3 horas)
+        moto6hRate:  5000,   // 6 Horas
+        moto12hRate: 9000,   // 12 Horas
+        moto24hRate: 15000,  // 24 Horas
+        motoMinuteRate: 60   // Tarifa por minuto extra - Moto
     }
 };
