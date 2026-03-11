@@ -483,8 +483,11 @@ function renderActiveTickets(tickets) {
                 </div>
                 
                 <div class="ticket-actions">
-                    <button class="btn btn-success" onclick="markAsPaid('${ticket.id}')">
+                    <button class="btn btn-success" style="flex: 2;" onclick="markAsPaid('${ticket.id}')">
                         ✅ Pagar
+                    </button>
+                    <button class="btn btn-primary" style="flex: 1; min-width: 50px;" onclick="reprintTicket('${ticket.id}')" title="Re-imprimir Ticket de Entrada">
+                        🖨️
                     </button>
                 </div>
             </div>
@@ -564,6 +567,181 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
 }
 
 // ===== NEW HELPER: WhatsApp Receipt Generator =====
+// ===== NEW HELPER: POS Printer Generator (58mm) =====
+// ===== NEW HELPER: POS Entry Ticket Generator (58mm) =====
+function printEntryTicket(ticket) {
+    // Create a hidden iframe for printing
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    
+    // Entry-optimized HTML
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            @page { size: 58mm auto; margin: 0; }
+            body { 
+                font-family: 'Courier New', Courier, monospace; 
+                width: 58mm; 
+                margin: 0; 
+                padding: 10px 5px; 
+                font-size: 13px; 
+                line-height: 1.2;
+                color: #000;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .separator { border-top: 1px dashed black; margin: 8px 0; }
+            .details { width: 100%; border-collapse: collapse; }
+            .details td { padding: 3px 0; vertical-align: top; }
+            .ticket-title { font-size: 16px; margin-bottom: 5px; }
+            .footer { font-size: 11px; margin-top: 15px; }
+            .big-plate { 
+                font-size: 24px; 
+                font-weight: bold; 
+                border: 2px solid #000; 
+                padding: 10px; 
+                margin: 10px 0;
+            }
+        </style>
+    </head>
+    <body onload="window.print(); setTimeout(() => { window.frameElement.remove(); }, 1000);">
+        <div class="center bold ticket-title">TICKET DE INGRESO</div>
+        <div class="center" style="font-size: 11px;">PARQUEADERO PROFESIONAL</div>
+        <div class="separator"></div>
+        
+        <div class="center big-plate">${ticket.placa}</div>
+        
+        <table class="details">
+            <tr><td class="bold">Cliente:</td><td style="text-align:right">${ticket.nombre_cliente}</td></tr>
+            <tr><td class="bold">Puesto:</td><td style="text-align:right">${ticket.puesto}</td></tr>
+            <tr><td class="bold">Vehículo:</td><td style="text-align:right">${ticket.tipo_vehiculo.toUpperCase()}</td></tr>
+            <tr><td class="bold">Tarifa:</td><td style="text-align:right">${ticket.rate_type}</td></tr>
+        </table>
+        
+        <div class="separator"></div>
+        
+        <div class="center">
+            <div class="bold">FECHA Y HORA DE INGRESO</div>
+            <div style="font-size: 15px; margin-top: 5px;">${formatDateTime(ticket.fecha_ingreso)}</div>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="footer center">
+            CONSERVE ESTE TICKET<br>
+            Lo necesitará para la salida.<br>
+            <span style="font-size: 9px; opacity: 0.7;">${new Date().toLocaleString()}</span>
+        </div>
+    </body>
+    </html>
+    `;
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+}
+
+function printPOSReceipt(ticket, realExitDate, finalTotal) {
+    const duration = calculateDuration(new Date(ticket.fecha_ingreso), realExitDate);
+    const timeStr = `${duration.days > 0 ? duration.days + 'd ' : ''}${duration.hours}h ${duration.minutes}m`;
+    
+    // Create a hidden iframe for printing
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    
+    // POS-Optimized HTML
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            @page { size: 58mm auto; margin: 0; }
+            body { 
+                font-family: 'Courier New', Courier, monospace; 
+                width: 58mm; 
+                margin: 0; 
+                padding: 10px 5px; 
+                font-size: 13px; 
+                line-height: 1.2;
+                color: #000;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .separator { border-top: 1px dashed black; margin: 8px 0; }
+            .details { width: 100%; border-collapse: collapse; }
+            .details td { padding: 3px 0; vertical-align: top; }
+            .total-box { 
+                margin: 10px 0; 
+                border-top: 2px solid black; 
+                border-bottom: 2px solid black;
+                padding: 8px 0;
+            }
+            .total-label { font-size: 14px; }
+            .total-value { font-size: 18px; font-weight: bold; }
+            .footer { font-size: 11px; margin-top: 15px; }
+        </style>
+    </head>
+    <body onload="window.print(); setTimeout(() => { window.frameElement.remove(); }, 1000);">
+        <div class="center bold" style="font-size: 16px;">PARQUEADERO</div>
+        <div class="center" style="font-size: 11px;">Sistema de Gestión Profesional</div>
+        <div class="separator"></div>
+        
+        <div class="center bold" style="font-size: 18px; background: #000; color: #fff; padding: 5px; margin-bottom: 5px;">
+            ${ticket.placa}
+        </div>
+        
+        <table class="details">
+            <tr><td class="bold">Cliente:</td><td style="text-align:right">${ticket.nombre_cliente}</td></tr>
+            <tr><td class="bold">Celular:</td><td style="text-align:right">${ticket.celular}</td></tr>
+            <tr><td class="bold">Puesto:</td><td style="text-align:right">${ticket.puesto}</td></tr>
+            <tr><td class="bold">Vehículo:</td><td style="text-align:right">${ticket.tipo_vehiculo.toUpperCase()}</td></tr>
+        </table>
+        
+        <div class="separator"></div>
+        
+        <table class="details">
+            <tr><td>ING:</td><td style="text-align:right">${formatDateTime(ticket.fecha_ingreso)}</td></tr>
+            <tr><td>SAL:</td><td style="text-align:right">${formatDateTime(realExitDate.toISOString())}</td></tr>
+            <tr><td class="bold">TIEMPO:</td><td style="text-align:right" class="bold">${timeStr}</td></tr>
+        </table>
+        
+        <div class="total-box center">
+            <div class="total-label">VALOR A PAGAR</div>
+            <div class="total-value">${formatCurrency(finalTotal)}</div>
+        </div>
+        
+        <div class="footer center">
+            ¡GRACIAS POR SU VISITA!<br>
+            Vuelva pronto.<br>
+            <span style="font-size: 9px; opacity: 0.7;">${new Date().toLocaleString()}</span>
+        </div>
+    </body>
+    </html>
+    `;
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+}
+
 function generateReceiptDetails(ticket, realExitDate, finalTotal) {
     const duration = calculateDuration(new Date(ticket.fecha_ingreso), realExitDate);
     const timeStr = `${duration.days > 0 ? duration.days + 'd ' : ''}${duration.hours}h ${duration.minutes}m`;
@@ -636,7 +814,10 @@ async function markAsPaid(ticketId) {
 
         if (!confirmed) return;
 
-        // 4. Update DB
+        // 4. Check if paper print is requested
+        const shouldPrint = document.getElementById('print-pos-receipt')?.checked;
+
+        // 5. Update DB
         const { error } = await db
             .from('tickets')
             .update({
@@ -648,22 +829,25 @@ async function markAsPaid(ticketId) {
 
         if (error) throw error;
 
-        // 5. Generate Receipt & Open WhatsApp
+        // 6. Handle Printing
+        if (shouldPrint) {
+            printPOSReceipt(ticket, now, finalTotal);
+        }
+
+        // 7. Generate Receipt & Open WhatsApp
         const receipt = generateReceiptDetails(ticket, now, finalTotal);
 
-        // Open WhatsApp in new tab
         // Open WhatsApp in new tab
         const waWindow = window.open(receipt.url, '_blank');
 
         if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
-            alert('⚠️ VENTANA BLOQUEADA\n\nEl navegador bloqueó la ventana de WhatsApp.\n\nPor favor permite las ventanas emergentes (pop-ups) para este sitio.');
-            // Fallback: redirects current window if user prefers, but that closes the app.
-            if (confirm('¿Deseas abrir WhatsApp en esta misma pestaña? (La app se recargará)')) {
-                window.location.href = receipt.url;
+            console.warn('WhatsApp popup blocked');
+            if (!shouldPrint) { // Only alert if we didn't print a physical receipt
+                alert('⚠️ VENTANA BLOQUEADA\n\nEl navegador bloqueó la ventana de WhatsApp.\n\nSin embargo, el pago ya fue registrado.');
             }
         }
 
-        showSuccessMessage('Ticket pagado y recibo generado 🧾');
+        showSuccessMessage('Ticket pagado' + (shouldPrint ? ' e impreso 🖨️' : ' 🧾'));
         await loadDashboard();
 
     } catch (error) {
@@ -839,6 +1023,11 @@ async function handleRegistration() {
 
         if (error) throw error;
 
+        // NEW: Print Entry Ticket if requested
+        if (document.getElementById('print-entry-ticket')?.checked) {
+            printEntryTicket(formData);
+        }
+
         if (messageContainer) {
             messageContainer.innerHTML = `<div class="alert alert-success">✅ Vehículo registrado exitosamente - Placa: ${formData.placa}${DEMO_MODE ? ' (Demo)' : ''}</div>`;
             setTimeout(() => messageContainer.innerHTML = '', 5000);
@@ -926,8 +1115,33 @@ function renderReportsTable(tickets) {
                     ${ticket.estado_pago ? 'Pagado' : 'Pendiente'}
                 </span>
             </td>
+            <td>
+                <button class="btn btn-sm btn-primary" style="min-height:30px; padding: 4px 8px; font-size: 12px;" onclick="reprintTicket('${ticket.id}')" title="Re-imprimir">
+                    🖨️
+                </button>
+            </td>
         </tr>
     `).join('');
+}
+
+async function reprintTicket(ticketId) {
+    try {
+        const { data, error } = await db.from('tickets').select('*').eq('id', ticketId).single();
+        if (error) throw error;
+        
+        if (data.estado_pago) {
+            // Re-print payment receipt
+            const exitDate = data.fecha_salida_real ? new Date(data.fecha_salida_real) : new Date();
+            printPOSReceipt(data, exitDate, data.total);
+        } else {
+            // Re-print entry ticket
+            printEntryTicket(data);
+        }
+        showSuccessMessage('Re-imprimiendo ticket... 🖨️');
+    } catch (e) {
+        console.error('Reprint error:', e);
+        alert('Error al re-imprimir: ' + e.message);
+    }
 }
 
 async function exportReportsToPDF() {
@@ -1167,3 +1381,4 @@ function closePaymentModal(confirmed) {
 // Make global
 window.markAsPaid = markAsPaid;
 window.closePaymentModal = closePaymentModal;
+window.reprintTicket = reprintTicket;
