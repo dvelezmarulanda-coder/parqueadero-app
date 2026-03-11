@@ -593,7 +593,7 @@ function printEntryTicket(ticket) {
                 width: 100%; 
                 max-width: 48mm;
                 margin: 0; 
-                padding: 10px 0 10px 15mm; 
+                padding: 10px 0 10px 5mm; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
@@ -626,10 +626,10 @@ function printEntryTicket(ticket) {
         <div class="center big-plate">${ticket.placa}</div>
         
         <table class="details">
-            <tr><td class="bold">Cliente:</td><td style="text-align:right">${ticket.nombre_cliente}</td></tr>
-            <tr><td class="bold">Puesto:</td><td style="text-align:right">${ticket.puesto}</td></tr>
-            <tr><td class="bold">Vehículo:</td><td style="text-align:right">${ticket.tipo_vehiculo.toUpperCase()}</td></tr>
-            <tr><td class="bold">Tarifa:</td><td style="text-align:right">${ticket.rate_type}</td></tr>
+            <tr><td class="bold">Cliente:</td><td>${ticket.nombre_cliente}</td></tr>
+            <tr><td class="bold">Puesto:</td><td>${ticket.puesto}</td></tr>
+            <tr><td class="bold">Vehículo:</td><td>${ticket.tipo_vehiculo.toUpperCase()}</td></tr>
+            <tr><td class="bold">Tarifa:</td><td>${ticket.rate_type}</td></tr>
         </table>
         
         <div class="separator"></div>
@@ -731,18 +731,18 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
         </div>
         
         <table class="details">
-            <tr><td class="bold">Cliente:</td><td style="text-align:right">${ticket.nombre_cliente}</td></tr>
-            <tr><td class="bold">Celular:</td><td style="text-align:right">${ticket.celular}</td></tr>
-            <tr><td class="bold">Puesto:</td><td style="text-align:right">${ticket.puesto}</td></tr>
-            <tr><td class="bold">Vehículo:</td><td style="text-align:right">${ticket.tipo_vehiculo.toUpperCase()}</td></tr>
+            <tr><td class="bold">Cliente:</td><td>${ticket.nombre_cliente}</td></tr>
+            <tr><td class="bold">Celular:</td><td>${ticket.celular}</td></tr>
+            <tr><td class="bold">Puesto:</td><td>${ticket.puesto}</td></tr>
+            <tr><td class="bold">Vehículo:</td><td>${ticket.tipo_vehiculo.toUpperCase()}</td></tr>
         </table>
         
         <div class="separator"></div>
         
         <table class="details">
-            <tr><td>ING:</td><td style="text-align:right">${formatDateTime(ticket.fecha_ingreso)}</td></tr>
-            <tr><td>SAL:</td><td style="text-align:right">${formatDateTime(realExitDate.toISOString())}</td></tr>
-            <tr><td class="bold">TIEMPO:</td><td style="text-align:right" class="bold">${timeStr}</td></tr>
+            <tr><td>ING:</td><td>${formatDateTime(ticket.fecha_ingreso)}</td></tr>
+            <tr><td>SAL:</td><td>${formatDateTime(realExitDate.toISOString())}</td></tr>
+            <tr><td class="bold">TIEMPO:</td><td class="bold">${timeStr}</td></tr>
         </table>
         
         <div class="total-box center">
