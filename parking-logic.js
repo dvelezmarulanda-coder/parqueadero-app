@@ -571,14 +571,18 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
 // ===== NEW HELPER: POS Entry Ticket Generator (58mm) =====
 function printEntryTicket(ticket) {
     // Create a hidden iframe for printing
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
+    let iframe = document.getElementById('pos-print-iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'pos-print-iframe';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+    }
 
     const doc = iframe.contentWindow.document;
     
@@ -614,7 +618,7 @@ function printEntryTicket(ticket) {
             }
         </style>
     </head>
-    <body onload="window.print(); setTimeout(() => { window.frameElement.remove(); }, 1000);">
+    <body onload="window.print();">
         <div class="center bold ticket-title">TICKET DE INGRESO</div>
         <div class="center" style="font-size: 11px;">PARQUEADERO PROFESIONAL</div>
         <div class="separator"></div>
@@ -656,14 +660,18 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
     const timeStr = `${duration.days > 0 ? duration.days + 'd ' : ''}${duration.hours}h ${duration.minutes}m`;
     
     // Create a hidden iframe for printing
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
+    let iframe = document.getElementById('pos-print-iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'pos-print-iframe';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+    }
 
     const doc = iframe.contentWindow.document;
     
@@ -699,7 +707,7 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
             .footer { font-size: 11px; margin-top: 15px; }
         </style>
     </head>
-    <body onload="window.print(); setTimeout(() => { window.frameElement.remove(); }, 1000);">
+    <body onload="window.print();">
         <div class="center bold" style="font-size: 16px;">PARQUEADERO</div>
         <div class="center" style="font-size: 11px;">Sistema de Gestión Profesional</div>
         <div class="separator"></div>
