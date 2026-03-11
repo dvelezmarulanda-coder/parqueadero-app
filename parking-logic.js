@@ -589,16 +589,18 @@ function printEntryTicket(ticket) {
         <style>
             @page { size: 58mm auto; margin: 0; }
             body { 
-                font-family: 'Courier New', Courier, monospace; 
+                font-family: Arial, Helvetica, sans-serif; 
                 width: 48mm; 
                 margin: 0; 
                 padding: 10px 0; 
-                font-size: 12px; 
-                line-height: 1.2;
+                font-size: 13px; 
+                font-weight: bold;
+                line-height: 1.3;
                 color: #000;
+                text-rendering: optimizeLegibility;
             }
             .center { text-align: center; }
-            .bold { font-weight: bold; }
+            .bold { font-weight: 900; }
             .separator { border-top: 1px dashed black; margin: 8px 0; }
             .details { width: 100%; border-collapse: collapse; }
             .details td { padding: 3px 0; vertical-align: top; }
@@ -681,16 +683,18 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
         <style>
             @page { size: 58mm auto; margin: 0; }
             body { 
-                font-family: 'Courier New', Courier, monospace; 
+                font-family: Arial, Helvetica, sans-serif; 
                 width: 48mm; 
                 margin: 0; 
                 padding: 10px 0; 
-                font-size: 12px; 
-                line-height: 1.2;
+                font-size: 13px; 
+                font-weight: bold;
+                line-height: 1.3;
                 color: #000;
+                text-rendering: optimizeLegibility;
             }
             .center { text-align: center; }
-            .bold { font-weight: bold; }
+            .bold { font-weight: 900; }
             .separator { border-top: 1px dashed black; margin: 8px 0; }
             .details { width: 100%; border-collapse: collapse; }
             .details td { padding: 3px 0; vertical-align: top; }
@@ -701,7 +705,7 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
                 padding: 8px 0;
             }
             .total-label { font-size: 14px; }
-            .total-value { font-size: 18px; font-weight: bold; }
+            .total-value { font-size: 18px; font-weight: 900; }
             .footer { font-size: 11px; margin-top: 15px; }
         </style>
     </head>
