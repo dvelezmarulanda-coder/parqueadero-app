@@ -593,7 +593,7 @@ function printEntryTicket(ticket) {
                 width: 100%; 
                 max-width: 48mm;
                 margin: 0; 
-                padding: 10px 0 10px 8mm; 
+                padding: 10px 0 10px 15mm; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
@@ -856,18 +856,14 @@ async function markAsPaid(ticketId) {
 
         if (error) throw error;
 
+        if (shouldPrint) {
+            printPOSReceipt(ticket, now, finalTotal);
+        }
+
         showSuccessMessage('Ticket pagado' + (shouldPrint ? ' e impreso 🖨️' : ' ✅'));
         
-        // Load the dashboard first so background fetch is not interrupted
+        // Load the dashboard last to avoid interrupting the print dialog thread
         await loadDashboard();
-
-        // 6. Handle Printing AFTER completing network queries
-        if (shouldPrint) {
-            // Slight delay to ensure DOM is ready
-            setTimeout(() => {
-                printPOSReceipt(ticket, now, finalTotal);
-            }, 500);
-        }
 
     } catch (error) {
         console.error('Error marking as paid:', error);
