@@ -588,7 +588,6 @@ function printEntryTicket(ticket) {
     <head>
         <style>
             @page { size: 58mm auto; margin: 0; }
-            body {
                 width: 100%; 
                 max-width: 58mm;
                 margin: 0; 
@@ -606,7 +605,7 @@ function printEntryTicket(ticket) {
             .separator { border-top: 1px dashed black; margin: 8px 0; }
             .details { width: 100%; border-collapse: collapse; margin: 10px 0; }
             .details td { padding: 4px 0; vertical-align: top; text-align: left; }
-            .details td.bold { padding-right: 10px; white-space: nowrap; width: 1%; }
+            .details td.bold { padding-right: 2px; white-space: nowrap; width: 1%; }
             .ticket-title { font-size: 16px; margin-bottom: 5px; }
             .footer { font-size: 11px; margin-top: 15px; }
             .big-plate { 
