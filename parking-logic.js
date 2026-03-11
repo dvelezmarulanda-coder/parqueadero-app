@@ -690,7 +690,7 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
                 width: 100%; 
                 max-width: 48mm;
                 margin: 0; 
-                padding: 10px 0 10px 8mm; 
+                padding: 10px 0 10px 15mm; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
