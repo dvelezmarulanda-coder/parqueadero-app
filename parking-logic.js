@@ -483,11 +483,8 @@ function renderActiveTickets(tickets) {
                 </div>
                 
                 <div class="ticket-actions">
-                    <button class="btn btn-success" style="flex: 2;" onclick="markAsPaid('${ticket.id}')">
+                    <button class="btn btn-success" onclick="markAsPaid('${ticket.id}')">
                         ✅ Pagar
-                    </button>
-                    <button class="btn btn-primary" style="flex: 1; min-width: 50px;" onclick="reprintTicket('${ticket.id}')" title="Re-imprimir Ticket de Entrada">
-                        🖨️
                     </button>
                 </div>
             </div>
@@ -848,20 +845,7 @@ async function markAsPaid(ticketId) {
             printPOSReceipt(ticket, now, finalTotal);
         }
 
-        // 7. Generate Receipt & Open WhatsApp
-        const receipt = generateReceiptDetails(ticket, now, finalTotal);
-
-        // Open WhatsApp in new tab
-        const waWindow = window.open(receipt.url, '_blank');
-
-        if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
-            console.warn('WhatsApp popup blocked');
-            if (!shouldPrint) { // Only alert if we didn't print a physical receipt
-                alert('⚠️ VENTANA BLOQUEADA\n\nEl navegador bloqueó la ventana de WhatsApp.\n\nSin embargo, el pago ya fue registrado.');
-            }
-        }
-
-        showSuccessMessage('Ticket pagado' + (shouldPrint ? ' e impreso 🖨️' : ' 🧾'));
+        showSuccessMessage('Ticket pagado' + (shouldPrint ? ' e impreso 🖨️' : ' ✅'));
         await loadDashboard();
 
     } catch (error) {
@@ -1036,11 +1020,6 @@ async function handleRegistration() {
         const { error } = await db.from('tickets').insert([formData]);
 
         if (error) throw error;
-
-        // NEW: Print Entry Ticket if requested
-        if (document.getElementById('print-entry-ticket')?.checked) {
-            printEntryTicket(formData);
-        }
 
         if (messageContainer) {
             messageContainer.innerHTML = `<div class="alert alert-success">✅ Vehículo registrado exitosamente - Placa: ${formData.placa}${DEMO_MODE ? ' (Demo)' : ''}</div>`;
