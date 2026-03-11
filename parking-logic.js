@@ -570,19 +570,17 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
 // ===== NEW HELPER: POS Printer Generator (58mm) =====
 // ===== NEW HELPER: POS Entry Ticket Generator (58mm) =====
 function printEntryTicket(ticket) {
-    // Create a hidden iframe for printing
-    let iframe = document.getElementById('pos-print-iframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'pos-print-iframe';
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
-    }
+    // Create a new hidden iframe for each print
+    const iframeId = 'print-frame-' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.id = iframeId;
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow.document;
     
@@ -595,10 +593,10 @@ function printEntryTicket(ticket) {
             @page { size: 58mm auto; margin: 0; }
             body { 
                 font-family: 'Courier New', Courier, monospace; 
-                width: 58mm; 
+                width: 48mm; 
                 margin: 0; 
-                padding: 10px 5px; 
-                font-size: 13px; 
+                padding: 10px 0; 
+                font-size: 12px; 
                 line-height: 1.2;
                 color: #000;
             }
@@ -653,25 +651,28 @@ function printEntryTicket(ticket) {
     doc.open();
     doc.write(html);
     doc.close();
+
+    // Clean up iframe after 2 minutes
+    setTimeout(() => {
+        try { document.body.removeChild(iframe); } catch(e){}
+    }, 120000);
 }
 
 function printPOSReceipt(ticket, realExitDate, finalTotal) {
     const duration = calculateDuration(new Date(ticket.fecha_ingreso), realExitDate);
     const timeStr = `${duration.days > 0 ? duration.days + 'd ' : ''}${duration.hours}h ${duration.minutes}m`;
     
-    // Create a hidden iframe for printing
-    let iframe = document.getElementById('pos-print-iframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'pos-print-iframe';
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
-    }
+    // Create a new hidden iframe for each print
+    const iframeId = 'print-frame-' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.id = iframeId;
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow.document;
     
@@ -684,10 +685,10 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
             @page { size: 58mm auto; margin: 0; }
             body { 
                 font-family: 'Courier New', Courier, monospace; 
-                width: 58mm; 
+                width: 48mm; 
                 margin: 0; 
-                padding: 10px 5px; 
-                font-size: 13px; 
+                padding: 10px 0; 
+                font-size: 12px; 
                 line-height: 1.2;
                 color: #000;
             }
@@ -748,6 +749,11 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
     doc.open();
     doc.write(html);
     doc.close();
+
+    // Clean up iframe after 2 minutes
+    setTimeout(() => {
+        try { document.body.removeChild(iframe); } catch(e){}
+    }, 120000);
 }
 
 function generateReceiptDetails(ticket, realExitDate, finalTotal) {
