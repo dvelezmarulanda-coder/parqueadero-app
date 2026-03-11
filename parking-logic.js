@@ -620,7 +620,6 @@ function printEntryTicket(ticket) {
     <body onload="window.print();">
         <div class="center bold ticket-title">PARQUEADERO LA Z</div>
         <div class="center bold ticket-title" style="font-size: 14px;">TICKET DE INGRESO</div>
-        <div class="center" style="font-size: 11px;">PARQUEADERO PROFESIONAL</div>
         <div class="separator"></div>
         
         <div class="center big-plate">${ticket.placa}</div>
@@ -723,7 +722,6 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
     </head>
     <body onload="window.print();">
         <div class="center bold" style="font-size: 16px;">PARQUEADERO LA Z</div>
-        <div class="center" style="font-size: 11px;">Sistema de Gestión Profesional</div>
         <div class="separator"></div>
         
         <div class="center big-plate">
