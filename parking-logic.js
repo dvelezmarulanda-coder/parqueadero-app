@@ -681,28 +681,23 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
     // POS-Optimized HTML
     const html = `
     <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            @page { size: 58mm auto; margin: 0; }
-            body { 
-                font-family: Arial, Helvetica, sans-serif; 
                 width: 100%; 
-                max-width: 48mm;
+                max-width: 58mm;
                 margin: 0; 
-                padding: 10px 0 10px 15mm; 
+                padding: 5px; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
                 line-height: 1.3;
                 color: #000;
+                text-align: center;
                 text-rendering: optimizeLegibility;
             }
             .center { text-align: center; }
             .bold { font-weight: 900; }
             .separator { border-top: 1px dashed black; margin: 8px 0; }
             .details { width: 100%; border-collapse: collapse; }
-            .details td { padding: 3px 0; vertical-align: top; }
+            .details td { padding: 3px 0; vertical-align: top; text-align: center; }
             .total-box { 
                 margin: 10px 0; 
                 border-top: 2px solid black; 
@@ -862,8 +857,10 @@ async function markAsPaid(ticketId) {
 
         showSuccessMessage('Ticket pagado' + (shouldPrint ? ' e impreso 🖨️' : ' ✅'));
         
-        // Load the dashboard last to avoid interrupting the print dialog thread
-        await loadDashboard();
+        // Load the dashboard after a short delay to ensure print dialog doesn't get stuck
+        setTimeout(async () => {
+            await loadDashboard();
+        }, 1000);
 
     } catch (error) {
         console.error('Error marking as paid:', error);
