@@ -588,12 +588,10 @@ function printEntryTicket(ticket) {
     <head>
         <style>
             @page { size: 58mm auto; margin: 0; }
-            body { 
-                font-family: Arial, Helvetica, sans-serif; 
                 width: 100%; 
                 max-width: 58mm;
                 margin: 0; 
-                padding: 5px; 
+                padding: 10px; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
@@ -605,8 +603,9 @@ function printEntryTicket(ticket) {
             .center { text-align: center; }
             .bold { font-weight: 900; }
             .separator { border-top: 1px dashed black; margin: 8px 0; }
-            .details { width: 100%; border-collapse: collapse; }
-            .details td { padding: 3px 0; vertical-align: top; text-align: center; }
+            .details { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            .details td { padding: 4px 5px; vertical-align: top; text-align: center; }
+            .details td.bold { padding-right: 0; }
             .ticket-title { font-size: 16px; margin-bottom: 5px; }
             .footer { font-size: 11px; margin-top: 15px; }
             .big-plate { 
@@ -681,11 +680,16 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
     
     // POS-Optimized HTML
     const html = `
-    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            @page { size: 58mm auto; margin: 0; }
+            body { 
+                font-family: Arial, Helvetica, sans-serif; 
                 width: 100%; 
                 max-width: 58mm;
                 margin: 0; 
-                padding: 5px; 
+                padding: 10px; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
@@ -697,16 +701,16 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
             .center { text-align: center; }
             .bold { font-weight: 900; }
             .separator { border-top: 1px dashed black; margin: 8px 0; }
-            .details { width: 100%; border-collapse: collapse; }
-            .details td { padding: 3px 0; vertical-align: top; text-align: center; }
+            .details { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            .details td { padding: 4px 5px; vertical-align: top; text-align: center; }
             .total-box { 
-                margin: 10px 0; 
+                margin: 15px 0; 
                 border-top: 2px solid black; 
                 border-bottom: 2px solid black;
-                padding: 8px 0;
+                padding: 10px 0;
             }
             .total-label { font-size: 14px; }
-            .total-value { font-size: 18px; font-weight: 900; }
+            .total-value { font-size: 20px; font-weight: 900; }
             .footer { font-size: 11px; margin-top: 15px; }
             .big-plate { 
                 font-size: 24px; 
