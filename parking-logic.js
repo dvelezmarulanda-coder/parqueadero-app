@@ -591,21 +591,22 @@ function printEntryTicket(ticket) {
             body { 
                 font-family: Arial, Helvetica, sans-serif; 
                 width: 100%; 
-                max-width: 48mm;
+                max-width: 58mm;
                 margin: 0; 
-                padding: 10px 0 10px 5mm; 
+                padding: 5px; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
                 line-height: 1.3;
                 color: #000;
+                text-align: center;
                 text-rendering: optimizeLegibility;
             }
             .center { text-align: center; }
             .bold { font-weight: 900; }
             .separator { border-top: 1px dashed black; margin: 8px 0; }
             .details { width: 100%; border-collapse: collapse; }
-            .details td { padding: 3px 0; vertical-align: top; }
+            .details td { padding: 3px 0; vertical-align: top; text-align: center; }
             .ticket-title { font-size: 16px; margin-bottom: 5px; }
             .footer { font-size: 11px; margin-top: 15px; }
             .big-plate { 
