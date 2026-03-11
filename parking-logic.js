@@ -689,20 +689,21 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
                 width: 100%; 
                 max-width: 58mm;
                 margin: 0; 
-                padding: 10px; 
+                padding: 2mm; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
                 line-height: 1.3;
                 color: #000;
-                text-align: center;
+                text-align: left;
                 text-rendering: optimizeLegibility;
             }
             .center { text-align: center; }
             .bold { font-weight: 900; }
             .separator { border-top: 1px dashed black; margin: 8px 0; }
             .details { width: 100%; border-collapse: collapse; margin: 10px 0; }
-            .details td { padding: 4px 5px; vertical-align: top; text-align: center; }
+            .details td { padding: 4px 0; vertical-align: top; text-align: left; }
+            .details td.bold { padding-right: 10px; white-space: nowrap; width: 1%; }
             .total-box { 
                 margin: 15px 0; 
                 border-top: 2px solid black; 
