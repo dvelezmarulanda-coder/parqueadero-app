@@ -591,9 +591,9 @@ function printEntryTicket(ticket) {
             body { 
                 font-family: Arial, Helvetica, sans-serif; 
                 width: 100%; 
-                max-width: 50mm;
-                margin: 0 auto; 
-                padding: 10px 2mm 10px 4mm; 
+                max-width: 48mm;
+                margin: 0; 
+                padding: 10px 0 10px 8mm; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
@@ -618,7 +618,8 @@ function printEntryTicket(ticket) {
         </style>
     </head>
     <body onload="window.print();">
-        <div class="center bold ticket-title">TICKET DE INGRESO</div>
+        <div class="center bold ticket-title">PARQUEADERO LA Z</div>
+        <div class="center bold ticket-title" style="font-size: 14px;">TICKET DE INGRESO</div>
         <div class="center" style="font-size: 11px;">PARQUEADERO PROFESIONAL</div>
         <div class="separator"></div>
         
@@ -687,9 +688,9 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
             body { 
                 font-family: Arial, Helvetica, sans-serif; 
                 width: 100%; 
-                max-width: 50mm;
-                margin: 0 auto; 
-                padding: 10px 2mm 10px 4mm; 
+                max-width: 48mm;
+                margin: 0; 
+                padding: 10px 0 10px 8mm; 
                 box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
@@ -721,7 +722,7 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
         </style>
     </head>
     <body onload="window.print();">
-        <div class="center bold" style="font-size: 16px;">PARQUEADERO</div>
+        <div class="center bold" style="font-size: 16px;">PARQUEADERO LA Z</div>
         <div class="center" style="font-size: 11px;">Sistema de Gestión Profesional</div>
         <div class="separator"></div>
         
@@ -855,13 +856,18 @@ async function markAsPaid(ticketId) {
 
         if (error) throw error;
 
-        // 6. Handle Printing
-        if (shouldPrint) {
-            printPOSReceipt(ticket, now, finalTotal);
-        }
-
         showSuccessMessage('Ticket pagado' + (shouldPrint ? ' e impreso 🖨️' : ' ✅'));
+        
+        // Load the dashboard first so background fetch is not interrupted
         await loadDashboard();
+
+        // 6. Handle Printing AFTER completing network queries
+        if (shouldPrint) {
+            // Slight delay to ensure DOM is ready
+            setTimeout(() => {
+                printPOSReceipt(ticket, now, finalTotal);
+            }, 500);
+        }
 
     } catch (error) {
         console.error('Error marking as paid:', error);
