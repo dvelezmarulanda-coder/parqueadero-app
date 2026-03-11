@@ -417,8 +417,8 @@ body {
 .ticket-info-label {
     font-weight: 600;
     color: var(--color-text-muted);
-    display: block;
-    margin-bottom: 2px;
+    display: inline-block;
+    margin-right: 6px;
 }
 
 .ticket-info-value {
