@@ -590,9 +590,11 @@ function printEntryTicket(ticket) {
             @page { size: 58mm auto; margin: 0; }
             body { 
                 font-family: Arial, Helvetica, sans-serif; 
-                width: 48mm; 
-                margin: 0; 
-                padding: 10px 0; 
+                width: 100%; 
+                max-width: 50mm;
+                margin: 0 auto; 
+                padding: 10px 2mm 10px 4mm; 
+                box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
                 line-height: 1.3;
@@ -684,9 +686,11 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
             @page { size: 58mm auto; margin: 0; }
             body { 
                 font-family: Arial, Helvetica, sans-serif; 
-                width: 48mm; 
-                margin: 0; 
-                padding: 10px 0; 
+                width: 100%; 
+                max-width: 50mm;
+                margin: 0 auto; 
+                padding: 10px 2mm 10px 4mm; 
+                box-sizing: border-box;
                 font-size: 13px; 
                 font-weight: bold;
                 line-height: 1.3;
@@ -707,6 +711,13 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
             .total-label { font-size: 14px; }
             .total-value { font-size: 18px; font-weight: 900; }
             .footer { font-size: 11px; margin-top: 15px; }
+            .big-plate { 
+                font-size: 24px; 
+                font-weight: 900; 
+                border: 2px solid #000; 
+                padding: 10px; 
+                margin: 10px 0;
+            }
         </style>
     </head>
     <body onload="window.print();">
@@ -714,7 +725,7 @@ function printPOSReceipt(ticket, realExitDate, finalTotal) {
         <div class="center" style="font-size: 11px;">Sistema de Gestión Profesional</div>
         <div class="separator"></div>
         
-        <div class="center bold" style="font-size: 18px; background: #000; color: #fff; padding: 5px; margin-bottom: 5px;">
+        <div class="center big-plate">
             ${ticket.placa}
         </div>
         
