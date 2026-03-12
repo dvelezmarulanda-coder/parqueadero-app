@@ -551,25 +551,16 @@ function calculatePrice(vehicleType, rateType, startDate, endDate, contractedDay
         // FIXED BLOCK billing
         if (!startDate || !endDate) {
             // Display mode: show the intended block price
-            // Assume 1 day for 24h if days not provided, and 30 for cupo
-            const multiplier = (rateType === '24h') ? 1 : (rateType === 'cupo' ? 30 : 1);
+            const multiplier = (rateType === '24h') ? contractedDays : (rateType === 'cupo' ? 30 : 1);
             baseTotal = blockPrice * multiplier;
         } else {
             // Checkout mode: professional early exit logic
-            // We need to know the duration originally contracted
             const hoursMap = { min: 3, '12h': 12, '24h': 24, cupo: 24*30 };
             
-            // For multi-day, we derive the allowed minutes from the ticket's estimated exit
-            // However, to keep it simple and robust, we calculate based on rateType
-            let allowedHours = hoursMap[rateType] || 3;
-            let currentBlockPrice = blockPrice;
-            
-            // If it's a 24h block, we might have multiple days contracted.
-            // We can detect this by checking the difference between startDate and estimated exit
-            // But for markAsPaid, we don't always have everything. 
-            // Better: calculatePrice(..., days)
-            // But we'll use a heuristic for now or update signatures.
-            // Let's assume startDate and endDate are entry and REAL exit.
+            // For multi-day, we multiply allowed hours and block price
+            const numDays = (rateType === '24h') ? contractedDays : (rateType === 'cupo' ? 30 : 1);
+            const allowedHours = hoursMap[rateType] === 24 ? (24 * numDays) : hoursMap[rateType];
+            const totalBlockPrice = (rateType === '24h' || rateType === 'cupo') ? (blockPrice * numDays) : blockPrice;
             
             const allowedMinutes = allowedHours * 60;
             
@@ -584,16 +575,16 @@ function calculatePrice(vehicleType, rateType, startDate, endDate, contractedDay
                     extraTotal = extraMinutes * minuteRate;
                 }
             } else {
-                // OTHER BLOCKS (12h, 24h/día, cupo): Professional early exit logic.
+                // OTHER BLOCKS: Professional early exit logic.
                 const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
-                baseTotal = Math.min(timeBasedTotal, blockPrice);
+                baseTotal = Math.min(timeBasedTotal, totalBlockPrice);
 
                 // Check for overtime (only if it exceeds the block duration)
                 if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
                     extraMinutes = durationInfo.totalMinutes - allowedMinutes;
                     extraTotal = extraMinutes * minuteRate;
                     // If there's overtime, they must pay the full block + overtime
-                    baseTotal = blockPrice;
+                    baseTotal = totalBlockPrice;
                 }
             }
         }
