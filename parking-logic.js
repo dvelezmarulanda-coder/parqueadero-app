@@ -1337,10 +1337,12 @@ function loadAdminPanelValues() {
     set('admin-car-12h-rate',  p.car12hRate   || 15000);
     set('admin-car-24h-rate',  p.car24hRate   || 25000);
     set('admin-car-cupo-rate', p.carCupoRate  || 0);
+    set('admin-car-minute-rate', p.carMinuteRate || 100);
     set('admin-moto-min-rate', p.motoMinRate  || 3000);
     set('admin-moto-12h-rate', p.moto12hRate  || 9000);
     set('admin-moto-24h-rate', p.moto24hRate  || 15000);
     set('admin-moto-cupo-rate', p.motoCupoRate || 0);
+    set('admin-moto-minute-rate', p.motoMinuteRate || 60);
     set('admin-warning-minutes', alerts.warningMinutes || 60);
 }
 
@@ -1353,10 +1355,12 @@ function saveAdminConfig() {
     CONFIG.pricing.car12hRate   = get('admin-car-12h-rate',  15000);
     CONFIG.pricing.car24hRate   = get('admin-car-24h-rate',  25000);
     CONFIG.pricing.carCupoRate  = get('admin-car-cupo-rate',  0);
+    CONFIG.pricing.carMinuteRate = get('admin-car-minute-rate', 100);
     CONFIG.pricing.motoMinRate  = get('admin-moto-min-rate', 3000);
     CONFIG.pricing.moto12hRate  = get('admin-moto-12h-rate', 9000);
     CONFIG.pricing.moto24hRate  = get('admin-moto-24h-rate', 15000);
     CONFIG.pricing.motoCupoRate = get('admin-moto-cupo-rate',  0);
+    CONFIG.pricing.motoMinuteRate = get('admin-moto-minute-rate', 60);
 
     localStorage.setItem('admin_config', JSON.stringify(CONFIG));
     showSuccessMessage('💾 Configuración guardada exitosamente');
