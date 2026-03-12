@@ -554,7 +554,7 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
             baseTotal = blockPrice;
         } else {
             // Checkout mode: professional early exit logic
-            const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
+            const hoursMap = { min: 3, '12h': 12, '24h': 24 };
             const allowedHours = hoursMap[rateType] || 3;
             const allowedMinutes = allowedHours * 60;
             
