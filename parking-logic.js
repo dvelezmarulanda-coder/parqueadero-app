@@ -558,18 +558,29 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
             const allowedHours = hoursMap[rateType] || 3;
             const allowedMinutes = allowedHours * 60;
             
-            // Calculate what they would pay per minute
-            const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
-            
-            // Use the lower of the block price or time-based price (Early Exit Logic)
-            baseTotal = Math.min(timeBasedTotal, blockPrice);
-
-            // Check for overtime (only if it exceeds the block duration)
-            if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
-                extraMinutes = durationInfo.totalMinutes - allowedMinutes;
-                extraTotal = extraMinutes * minuteRate;
-                // If there's overtime, they must pay the full block + overtime
+            // Billing logic based on rate type
+            if (rateType === 'min') {
+                // FIXED MINIMUM: Always charge the full block price (e.g. 5000) even for 1 minute.
                 baseTotal = blockPrice;
+                
+                // Add overtime only if they exceed the allowed duration
+                if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
+                    extraMinutes = durationInfo.totalMinutes - allowedMinutes;
+                    extraTotal = extraMinutes * minuteRate;
+                }
+            } else {
+                // OTHER BLOCKS (12h, 24h/día): Professional early exit logic.
+                // Use the lower of the block price or time-based price.
+                const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
+                baseTotal = Math.min(timeBasedTotal, blockPrice);
+
+                // Check for overtime (only if it exceeds the block duration)
+                if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
+                    extraMinutes = durationInfo.totalMinutes - allowedMinutes;
+                    extraTotal = extraMinutes * minuteRate;
+                    // If there's overtime, they must pay the full block + overtime
+                    baseTotal = blockPrice;
+                }
             }
         }
     }
