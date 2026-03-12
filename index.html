@@ -161,6 +161,22 @@
                                     <div class="rate-price" id="price-24h"></div>
                                 </label>
                             </div>
+                            <div class="rate-option">
+                                <input type="radio" id="rate-cupo" name="rate_type" value="cupo">
+                                <label for="rate-cupo" class="rate-option-label">
+                                    <div class="rate-icon">🗓️</div>
+                                    <div class="rate-name">CUPO o mes</div>
+                                    <div class="rate-price" id="price-cupo">$0</div>
+                                </label>
+                            </div>
+                            <div class="rate-option">
+                                <input type="radio" id="rate-none" name="rate_type" value="none">
+                                <label for="rate-none" class="rate-option-label">
+                                    <div class="rate-icon">⏱️</div>
+                                    <div class="rate-name">POR MINUTO</div>
+                                    <div class="rate-sublabel">Sin bloque fijo</div>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -292,6 +308,11 @@
                             <label class="form-label" for="admin-car-24h-rate">🌙 24 Horas</label>
                             <input type="number" id="admin-car-24h-rate" class="form-input" min="0" step="500" value="25000">
                         </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="admin-car-cupo-rate">🗓️ Tarifa Mensual (CUPO)</label>
+                            <input type="number" id="admin-car-cupo-rate" class="form-input" min="0" step="1000" value="0">
+                        </div>
 
                         <div class="form-group">
                             <label class="form-label" for="admin-car-minute-rate">⏱️ Tarifa por minuto extra</label>
@@ -319,6 +340,11 @@
                         <div class="form-group">
                             <label class="form-label" for="admin-moto-24h-rate">🌙 24 Horas</label>
                             <input type="number" id="admin-moto-24h-rate" class="form-input" min="0" step="500" value="15000">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="admin-moto-cupo-rate">🗓️ Tarifa Mensual (CUPO)</label>
+                            <input type="number" id="admin-moto-cupo-rate" class="form-input" min="0" step="1000" value="0">
                         </div>
 
                         <div class="form-group">

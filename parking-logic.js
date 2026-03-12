@@ -514,6 +514,7 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
             '6h': pricing.car6hRate   || 8000,
             '12h':pricing.car12hRate  || 15000,
             '24h':pricing.car24hRate  || 25000,
+            cupo: pricing.carCupoRate  || 0,
             minute: pricing.carMinuteRate || 100
         },
         moto: {
@@ -521,12 +522,13 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
             '6h': pricing.moto6hRate   || 5000,
             '12h':pricing.moto12hRate  || 9000,
             '24h':pricing.moto24hRate  || 15000,
+            cupo: pricing.motoCupoRate  || 0,
             minute: pricing.motoMinuteRate || 60
         }
     };
 
     const vehicleRates = rateMap[vehicleType] || rateMap['carro'];
-    baseTotal = vehicleRates[rateType] || vehicleRates['min'];
+    const blockPrice = vehicleRates[rateType] || 0;
     const minuteRate = vehicleRates.minute;
 
     // 2. Calculate duration
@@ -534,19 +536,34 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
         ? calculateDuration(startDate, endDate)
         : { totalHours: 0, hours: 0, days: 0, months: 0, totalMinutes: 0, minutes: 0 };
 
-    // 3. Check for overtime
+    // 3. Billing Logic Implementation
     let extraMinutes = 0;
     let extraTotal = 0;
     
-    if (startDate && endDate && durationInfo.totalMinutes > 0) {
+    if (rateType === 'cupo') {
+        // CUPO users pay 0 at checkout (monthly payment handled elsewhere)
+        baseTotal = blockPrice;
+    } else if (rateType === 'none') {
+        // PER MINUTE billing
+        baseTotal = durationInfo.totalMinutes * minuteRate;
+    } else {
+        // FIXED BLOCK billing with professional early exit logic
         const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
         const allowedHours = hoursMap[rateType] || 3;
         const allowedMinutes = allowedHours * 60;
         
-        // 5 minutes grace period
+        // Calculate what they would pay per minute
+        const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
+        
+        // Use the lower of the block price or time-based price (Early Exit Logic)
+        baseTotal = Math.min(timeBasedTotal, blockPrice);
+
+        // Check for overtime (only if it exceeds the block duration)
         if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
             extraMinutes = durationInfo.totalMinutes - allowedMinutes;
             extraTotal = extraMinutes * minuteRate;
+            // If there's overtime, they must pay the full block + overtime
+            baseTotal = blockPrice;
         }
     }
 
@@ -821,9 +838,17 @@ async function markAsPaid(ticketId) {
 
         const priceDetails = calculatePrice(ticket.tipo_vehiculo, rateType, entryDate, now);
         const finalTotal = priceDetails.total;
+        const isCupo = rateType === 'cupo';
 
         // 3. Show Custom Modal with payment details
-        const rateLabels = { min: 'Tarifa Mínima', '6h': '6 Horas', '12h': '12 Horas', '24h': '24 Horas' };
+        const rateLabels = { 
+            min: 'Tarifa Mínima', 
+            '6h': '6 Horas', 
+            '12h': '12 Horas', 
+            '24h': '24 Horas',
+            cupo: 'CUPO o mes',
+            none: 'Por Minuto'
+        };
         
         const timeStr = `${priceDetails.durationInfo.days > 0 ? priceDetails.durationInfo.days + 'd ' : ''}${priceDetails.durationInfo.hours}h ${priceDetails.durationInfo.minutes}m`;
 
@@ -932,7 +957,7 @@ function updateExitDateFromRate() {
     let rateType = 'min';
     for (let r of rateTypeArr) if (r.checked) rateType = r.value;
 
-    const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
+    const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24, cupo: 24*30, none: 1 };
     const hours = hoursMap[rateType] || 3;
 
     const fechaIngresoEl = document.getElementById('fecha-ingreso');
@@ -956,8 +981,8 @@ function updateRatePricesDisplay() {
 
     if (!vehicleType) return;
 
-    // Get prices for all 4 block types for the selected vehicle type
-    const rates = ['min', '6h', '12h', '24h'];
+    // Get prices for all block types for the selected vehicle type
+    const rates = ['min', '6h', '12h', '24h', 'cupo'];
     rates.forEach(rateType => {
         const priceDetails = calculatePrice(vehicleType, rateType, null, null);
         const priceEl = document.getElementById(`price-${rateType}`);
@@ -1241,11 +1266,13 @@ function loadAdminPanelValues() {
     set('admin-car-6h-rate',   p.car6hRate    || 8000);
     set('admin-car-12h-rate',  p.car12hRate   || 15000);
     set('admin-car-24h-rate',  p.car24hRate   || 25000);
+    set('admin-car-cupo-rate', p.carCupoRate  || 0);
     set('admin-car-minute-rate', p.carMinuteRate || 100);
     set('admin-moto-min-rate', p.motoMinRate  || 3000);
     set('admin-moto-6h-rate',  p.moto6hRate   || 5000);
     set('admin-moto-12h-rate', p.moto12hRate  || 9000);
     set('admin-moto-24h-rate', p.moto24hRate  || 15000);
+    set('admin-moto-cupo-rate', p.motoCupoRate || 0);
     set('admin-moto-minute-rate', p.motoMinuteRate || 60);
     set('admin-warning-minutes', alerts.warningMinutes || 60);
 }
@@ -1259,11 +1286,13 @@ function saveAdminConfig() {
     CONFIG.pricing.car6hRate    = get('admin-car-6h-rate',   8000);
     CONFIG.pricing.car12hRate   = get('admin-car-12h-rate',  15000);
     CONFIG.pricing.car24hRate   = get('admin-car-24h-rate',  25000);
+    CONFIG.pricing.carCupoRate  = get('admin-car-cupo-rate',  0);
     CONFIG.pricing.carMinuteRate = get('admin-car-minute-rate', 100);
     CONFIG.pricing.motoMinRate  = get('admin-moto-min-rate', 3000);
     CONFIG.pricing.moto6hRate   = get('admin-moto-6h-rate',  5000);
     CONFIG.pricing.moto12hRate  = get('admin-moto-12h-rate', 9000);
     CONFIG.pricing.moto24hRate  = get('admin-moto-24h-rate', 15000);
+    CONFIG.pricing.motoCupoRate = get('admin-moto-cupo-rate',  0);
     CONFIG.pricing.motoMinuteRate = get('admin-moto-minute-rate', 60);
 
     localStorage.setItem('admin_config', JSON.stringify(CONFIG));
