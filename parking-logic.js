@@ -1067,6 +1067,34 @@ async function handleRegistration() {
             estado_pago: false
         };
 
+        // --- VALIDATION: Check if Spot or Plate is already active ---
+        const { data: existing, error: checkError } = await db
+            .from('tickets')
+            .select('placa, puesto')
+            .eq('estado_pago', false);
+
+        if (checkError) throw checkError;
+
+        if (existing && existing.length > 0) {
+            const occupiedSpot = existing.find(t => t.puesto === formData.puesto);
+            if (occupiedSpot) {
+                if (messageContainer) {
+                    messageContainer.innerHTML = `<div class="alert alert-danger">⚠️ El puesto <strong>${formData.puesto}</strong> ya está ocupado. Por favor elige otro.</div>`;
+                    messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                return; // Stop registration
+            }
+
+            const activePlate = existing.find(t => t.placa === formData.placa);
+            if (activePlate) {
+                if (messageContainer) {
+                    messageContainer.innerHTML = `<div class="alert alert-danger">⚠️ El vehículo con placa <strong>${formData.placa}</strong> ya se encuentra en el parqueadero.</div>`;
+                    messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                return; // Stop registration
+            }
+        }
+
         const { error } = await db.from('tickets').insert([formData]);
 
         if (error) throw error;
