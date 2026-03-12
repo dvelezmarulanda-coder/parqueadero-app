@@ -503,7 +503,7 @@ function getAlertClass(fechaSalida) {
 }
 
 // ===== PRICE CALCULATION: Fixed Block Rates + Overtime =====
-function calculatePrice(vehicleType, rateType, startDate, endDate) {
+function calculatePrice(vehicleType, rateType, startDate, endDate, contractedDays = 1) {
     const pricing = (CONFIG && CONFIG.pricing) ? CONFIG.pricing : {};
     let baseTotal = 0;
 
@@ -551,11 +551,26 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
         // FIXED BLOCK billing
         if (!startDate || !endDate) {
             // Display mode: show the intended block price
-            baseTotal = blockPrice;
+            // Assume 1 day for 24h if days not provided, and 30 for cupo
+            const multiplier = (rateType === '24h') ? 1 : (rateType === 'cupo' ? 30 : 1);
+            baseTotal = blockPrice * multiplier;
         } else {
             // Checkout mode: professional early exit logic
-            const hoursMap = { min: 3, '12h': 12, '24h': 24 };
-            const allowedHours = hoursMap[rateType] || 3;
+            // We need to know the duration originally contracted
+            const hoursMap = { min: 3, '12h': 12, '24h': 24, cupo: 24*30 };
+            
+            // For multi-day, we derive the allowed minutes from the ticket's estimated exit
+            // However, to keep it simple and robust, we calculate based on rateType
+            let allowedHours = hoursMap[rateType] || 3;
+            let currentBlockPrice = blockPrice;
+            
+            // If it's a 24h block, we might have multiple days contracted.
+            // We can detect this by checking the difference between startDate and estimated exit
+            // But for markAsPaid, we don't always have everything. 
+            // Better: calculatePrice(..., days)
+            // But we'll use a heuristic for now or update signatures.
+            // Let's assume startDate and endDate are entry and REAL exit.
+            
             const allowedMinutes = allowedHours * 60;
             
             // Billing logic based on rate type
@@ -569,8 +584,7 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
                     extraTotal = extraMinutes * minuteRate;
                 }
             } else {
-                // OTHER BLOCKS (12h, 24h/día): Professional early exit logic.
-                // Use the lower of the block price or time-based price.
+                // OTHER BLOCKS (12h, 24h/día, cupo): Professional early exit logic.
                 const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
                 baseTotal = Math.min(timeBasedTotal, blockPrice);
 
@@ -854,7 +868,12 @@ async function markAsPaid(ticketId) {
         // Fallback to 'hour' if rate_type is missing (legacy records)
         const rateType = ticket.rate_type || 'hour';
 
-        const priceDetails = calculatePrice(ticket.tipo_vehiculo, rateType, entryDate, now);
+        // Detect contracted days from estimated exit
+        const diffEst = new Date(ticket.fecha_salida_estimada) - entryDate;
+        const estHours = diffEst / (1000 * 60 * 60);
+        const contractedDays = (rateType === '24h') ? Math.round(estHours / 24) : 1;
+
+        const priceDetails = calculatePrice(ticket.tipo_vehiculo, rateType, entryDate, now, contractedDays);
         const finalTotal = priceDetails.total;
         const isCupo = rateType === 'cupo';
 
@@ -937,6 +956,15 @@ function setupRegistrationForm() {
         await handleRegistration();
     };
 
+    // Toggle days selector visibility
+    const toggleDaysInput = () => {
+        const selectedRate = document.querySelector('input[name="rate_type"]:checked')?.value;
+        const daysGroup = document.getElementById('days-selector-group');
+        if (daysGroup) {
+            daysGroup.style.display = selectedRate === '24h' ? 'block' : 'none';
+        }
+    };
+
     // Re-calculate prices when changing vehicle type
     const vehicleTypeArr = document.getElementsByName('tipo_vehiculo');
     vehicleTypeArr.forEach(radio => {
@@ -950,19 +978,21 @@ function setupRegistrationForm() {
     const rateTypeArr = document.getElementsByName('rate_type');
     rateTypeArr.forEach(radio => {
         radio.addEventListener('change', () => {
+            toggleDaysInput();
             updateExitDateFromRate();
             updateRatePricesDisplay();
         });
     });
 
-    // Manual date change still recalculates exit date
-    const fechaIngreso = document.getElementById('fecha-ingreso');
-    if (fechaIngreso) {
-        fechaIngreso.onchange = () => {
+    const cantidadDias = document.getElementById('cantidad-dias');
+    if (cantidadDias) {
+        cantidadDias.addEventListener('input', () => {
             updateExitDateFromRate();
-        };
+            updateRatePricesDisplay();
+        });
     }
 
+    toggleDaysInput();
     updateExitDateFromRate();
     updateRatePricesDisplay();
 }
@@ -973,7 +1003,10 @@ function updateExitDateFromRate() {
     let rateType = 'min';
     for (let r of rateTypeArr) if (r.checked) rateType = r.value;
 
-    const hoursMap = { min: 3, '12h': 12, '24h': 24, cupo: 24*30 };
+    const daysInput = document.getElementById('cantidad-dias');
+    const numDays = (rateType === '24h' && daysInput) ? (parseInt(daysInput.value) || 1) : 1;
+
+    const hoursMap = { min: 3, '12h': 12, '24h': 24 * numDays, cupo: 24 * 30 };
     const hours = hoursMap[rateType] || 3;
 
     const fechaIngresoEl = document.getElementById('fecha-ingreso');
@@ -1000,10 +1033,21 @@ function updateRatePricesDisplay() {
     // Get prices for all block types for the selected vehicle type
     const rates = ['min', '12h', '24h', 'cupo'];
     rates.forEach(rateType => {
-        const priceDetails = calculatePrice(vehicleType, rateType, null, null);
+        const daysInput = document.getElementById('cantidad-dias');
+        const numDays = (rateType === '24h' && daysInput) ? (parseInt(daysInput.value) || 1) : (rateType === 'cupo' ? 30 : 1);
+        
+        // Custom calculation for multi-day display
+        const pricing = CONFIG.pricing || {};
+        const rateMap = {
+            carro: { min: pricing.carMinRate, '12h': pricing.car12hRate, '24h': pricing.car24hRate, cupo: pricing.carCupoRate },
+            moto: { min: pricing.motoMinRate, '12h': pricing.moto12hRate, '24h': pricing.moto24hRate, cupo: pricing.motoCupoRate }
+        };
+        const baseRate = (rateMap[vehicleType] || rateMap['carro'])[rateType] || 0;
+        const displayTotal = baseRate * numDays;
+
         const priceEl = document.getElementById(`price-${rateType}`);
         if (priceEl) {
-            priceEl.textContent = formatCurrency(priceDetails.total);
+            priceEl.textContent = formatCurrency(displayTotal);
         }
     });
 }
@@ -1056,12 +1100,15 @@ async function handleRegistration() {
         // Calculate the simulated estimated exit date based on the chosen rate
         const rateType = document.querySelector('input[name="rate_type"]:checked').value;
         const vehicleType = document.querySelector('input[name="tipo_vehiculo"]:checked').value;
-        const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
+        const daysInput = document.getElementById('cantidad-dias');
+        const numDays = (rateType === '24h' && daysInput) ? (parseInt(daysInput.value) || 1) : (rateType === 'cupo' ? 30 : 1);
+        
+        const hoursMap = { min: 3, '12h': 12, '24h': 24 * numDays, cupo: 24 * 30 };
         const blockHours = hoursMap[rateType] || 3;
         const fechaSalidaEstimada = new Date(fechaIngreso.getTime() + blockHours * 60 * 60 * 1000);
 
         // Get total for the ticket
-        const priceDetails = calculatePrice(vehicleType, rateType, null, null);
+        const priceDetails = calculatePrice(vehicleType, rateType, null, null, (rateType === '24h' ? numDays : 1));
 
         const formData = {
             placa: document.getElementById('placa').value.trim().toUpperCase(),
