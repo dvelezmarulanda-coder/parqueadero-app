@@ -542,28 +542,35 @@ function calculatePrice(vehicleType, rateType, startDate, endDate) {
     
     if (rateType === 'cupo') {
         // CUPO users pay 0 at checkout (monthly payment handled elsewhere)
+        // But for display we show the monthly cost (blockPrice)
         baseTotal = blockPrice;
     } else if (rateType === 'none') {
         // PER MINUTE billing
         baseTotal = durationInfo.totalMinutes * minuteRate;
     } else {
-        // FIXED BLOCK billing with professional early exit logic
-        const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
-        const allowedHours = hoursMap[rateType] || 3;
-        const allowedMinutes = allowedHours * 60;
-        
-        // Calculate what they would pay per minute
-        const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
-        
-        // Use the lower of the block price or time-based price (Early Exit Logic)
-        baseTotal = Math.min(timeBasedTotal, blockPrice);
-
-        // Check for overtime (only if it exceeds the block duration)
-        if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
-            extraMinutes = durationInfo.totalMinutes - allowedMinutes;
-            extraTotal = extraMinutes * minuteRate;
-            // If there's overtime, they must pay the full block + overtime
+        // FIXED BLOCK billing
+        if (!startDate || !endDate) {
+            // Display mode: show the intended block price
             baseTotal = blockPrice;
+        } else {
+            // Checkout mode: professional early exit logic
+            const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24 };
+            const allowedHours = hoursMap[rateType] || 3;
+            const allowedMinutes = allowedHours * 60;
+            
+            // Calculate what they would pay per minute
+            const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
+            
+            // Use the lower of the block price or time-based price (Early Exit Logic)
+            baseTotal = Math.min(timeBasedTotal, blockPrice);
+
+            // Check for overtime (only if it exceeds the block duration)
+            if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
+                extraMinutes = durationInfo.totalMinutes - allowedMinutes;
+                extraTotal = extraMinutes * minuteRate;
+                // If there's overtime, they must pay the full block + overtime
+                baseTotal = blockPrice;
+            }
         }
     }
 
