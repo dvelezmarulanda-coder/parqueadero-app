@@ -1157,10 +1157,12 @@ async function loadReports() {
 
         if (!tickets || tickets.length === 0) {
             container.innerHTML = '<tr><td colspan="7" class="text-center">No hay registros en el historial</td></tr>';
+            updateReportSummary([]);
             return;
         }
 
         renderReportsTable(tickets);
+        updateReportSummary(tickets);
 
     } catch (error) {
         console.error('Error loading reports:', error);
@@ -1193,6 +1195,42 @@ function renderReportsTable(tickets) {
             </td>
         </tr>
     `).join('');
+}
+
+function updateReportSummary(tickets) {
+    const summaryContainer = document.getElementById('report-summary');
+    if (!summaryContainer) return;
+
+    if (!tickets || tickets.length === 0) {
+        summaryContainer.innerHTML = '';
+        return;
+    }
+
+    const totalRevenue = tickets.reduce((sum, t) => sum + parseFloat(t.total || 0), 0);
+    const totalVehicles = tickets.length;
+    const paidCount = tickets.filter(t => t.estado_pago).length;
+    const pendingCount = totalVehicles - paidCount;
+
+    summaryContainer.innerHTML = `
+        <div class="stats-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+            <div class="stat-card" style="padding: 1rem; background: var(--color-success-light);">
+                <div class="stat-label">Recaudo Total</div>
+                <div class="stat-value" style="font-size: 1.5rem; color: var(--color-success);">${formatCurrency(totalRevenue)}</div>
+            </div>
+            <div class="stat-card" style="padding: 1rem;">
+                <div class="stat-label">Total Registros</div>
+                <div class="stat-value" style="font-size: 1.5rem;">${totalVehicles}</div>
+            </div>
+            <div class="stat-card" style="padding: 1rem;">
+                <div class="stat-label">Pagados</div>
+                <div class="stat-value" style="font-size: 1.5rem; color: var(--color-success);">${paidCount}</div>
+            </div>
+            <div class="stat-card" style="padding: 1rem;">
+                <div class="stat-label">Pendientes</div>
+                <div class="stat-value" style="font-size: 1.5rem; color: var(--color-warning);">${pendingCount}</div>
+            </div>
+        </div>
+    `;
 }
 
 async function reprintTicket(ticketId) {
