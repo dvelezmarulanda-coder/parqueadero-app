@@ -850,11 +850,9 @@ async function markAsPaid(ticketId) {
         // 3. Show Custom Modal with payment details
         const rateLabels = { 
             min: 'Tarifa Mínima', 
-            '6h': '6 Horas', 
             '12h': '12 Horas', 
-            '24h': '24 Horas',
-            cupo: 'CUPO o mes',
-            none: 'Por Minuto'
+            '24h': 'x día',
+            cupo: 'CUPO o mes'
         };
         
         const timeStr = `${priceDetails.durationInfo.days > 0 ? priceDetails.durationInfo.days + 'd ' : ''}${priceDetails.durationInfo.hours}h ${priceDetails.durationInfo.minutes}m`;
@@ -964,7 +962,7 @@ function updateExitDateFromRate() {
     let rateType = 'min';
     for (let r of rateTypeArr) if (r.checked) rateType = r.value;
 
-    const hoursMap = { min: 3, '6h': 6, '12h': 12, '24h': 24, cupo: 24*30, none: 1 };
+    const hoursMap = { min: 3, '12h': 12, '24h': 24, cupo: 24*30 };
     const hours = hoursMap[rateType] || 3;
 
     const fechaIngresoEl = document.getElementById('fecha-ingreso');
@@ -989,7 +987,7 @@ function updateRatePricesDisplay() {
     if (!vehicleType) return;
 
     // Get prices for all block types for the selected vehicle type
-    const rates = ['min', '6h', '12h', '24h', 'cupo'];
+    const rates = ['min', '12h', '24h', 'cupo'];
     rates.forEach(rateType => {
         const priceDetails = calculatePrice(vehicleType, rateType, null, null);
         const priceEl = document.getElementById(`price-${rateType}`);
@@ -1336,17 +1334,13 @@ function loadAdminPanelValues() {
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
     set('admin-total-spaces',  parking.totalSpaces  || 50);
     set('admin-car-min-rate',  p.carMinRate   || 5000);
-    set('admin-car-6h-rate',   p.car6hRate    || 8000);
     set('admin-car-12h-rate',  p.car12hRate   || 15000);
     set('admin-car-24h-rate',  p.car24hRate   || 25000);
     set('admin-car-cupo-rate', p.carCupoRate  || 0);
-    set('admin-car-minute-rate', p.carMinuteRate || 100);
     set('admin-moto-min-rate', p.motoMinRate  || 3000);
-    set('admin-moto-6h-rate',  p.moto6hRate   || 5000);
     set('admin-moto-12h-rate', p.moto12hRate  || 9000);
     set('admin-moto-24h-rate', p.moto24hRate  || 15000);
     set('admin-moto-cupo-rate', p.motoCupoRate || 0);
-    set('admin-moto-minute-rate', p.motoMinuteRate || 60);
     set('admin-warning-minutes', alerts.warningMinutes || 60);
 }
 
@@ -1356,17 +1350,13 @@ function saveAdminConfig() {
     CONFIG.parking.totalSpaces = get('admin-total-spaces', 50);
     CONFIG.alerts.warningMinutes = get('admin-warning-minutes', 60);
     CONFIG.pricing.carMinRate   = get('admin-car-min-rate',  5000);
-    CONFIG.pricing.car6hRate    = get('admin-car-6h-rate',   8000);
     CONFIG.pricing.car12hRate   = get('admin-car-12h-rate',  15000);
     CONFIG.pricing.car24hRate   = get('admin-car-24h-rate',  25000);
     CONFIG.pricing.carCupoRate  = get('admin-car-cupo-rate',  0);
-    CONFIG.pricing.carMinuteRate = get('admin-car-minute-rate', 100);
     CONFIG.pricing.motoMinRate  = get('admin-moto-min-rate', 3000);
-    CONFIG.pricing.moto6hRate   = get('admin-moto-6h-rate',  5000);
     CONFIG.pricing.moto12hRate  = get('admin-moto-12h-rate', 9000);
     CONFIG.pricing.moto24hRate  = get('admin-moto-24h-rate', 15000);
     CONFIG.pricing.motoCupoRate = get('admin-moto-cupo-rate',  0);
-    CONFIG.pricing.motoMinuteRate = get('admin-moto-minute-rate', 60);
 
     localStorage.setItem('admin_config', JSON.stringify(CONFIG));
     showSuccessMessage('💾 Configuración guardada exitosamente');

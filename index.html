@@ -138,14 +138,6 @@
                                 </label>
                             </div>
                             <div class="rate-option">
-                                <input type="radio" id="rate-6h" name="rate_type" value="6h">
-                                <label for="rate-6h" class="rate-option-label">
-                                    <div class="rate-icon">🕕</div>
-                                    <div class="rate-name">6 Horas</div>
-                                    <div class="rate-price" id="price-6h"></div>
-                                </label>
-                            </div>
-                            <div class="rate-option">
                                 <input type="radio" id="rate-12h" name="rate_type" value="12h">
                                 <label for="rate-12h" class="rate-option-label">
                                     <div class="rate-icon">🕛</div>
@@ -157,7 +149,7 @@
                                 <input type="radio" id="rate-24h" name="rate_type" value="24h">
                                 <label for="rate-24h" class="rate-option-label">
                                     <div class="rate-icon">🌙</div>
-                                    <div class="rate-name">24 Horas</div>
+                                    <div class="rate-name">x día</div>
                                     <div class="rate-price" id="price-24h"></div>
                                 </label>
                             </div>
@@ -167,14 +159,6 @@
                                     <div class="rate-icon">🗓️</div>
                                     <div class="rate-name">CUPO o mes</div>
                                     <div class="rate-price" id="price-cupo">$0</div>
-                                </label>
-                            </div>
-                            <div class="rate-option">
-                                <input type="radio" id="rate-none" name="rate_type" value="none">
-                                <label for="rate-none" class="rate-option-label">
-                                    <div class="rate-icon">⏱️</div>
-                                    <div class="rate-name">POR MINUTO</div>
-                                    <div class="rate-sublabel">Sin bloque fijo</div>
                                 </label>
                             </div>
                         </div>
@@ -295,28 +279,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="admin-car-6h-rate">🕕 6 Horas</label>
-                            <input type="number" id="admin-car-6h-rate" class="form-input" min="0" step="500" value="8000">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="admin-car-12h-rate">🕛 12 Horas</label>
-                            <input type="number" id="admin-car-12h-rate" class="form-input" min="0" step="500" value="15000">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="admin-car-24h-rate">🌙 24 Horas</label>
+                            <label class="form-label" for="admin-car-24h-rate">🌙 x día</label>
                             <input type="number" id="admin-car-24h-rate" class="form-input" min="0" step="500" value="25000">
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label" for="admin-car-cupo-rate">🗓️ Tarifa Mensual (CUPO)</label>
                             <input type="number" id="admin-car-cupo-rate" class="form-input" min="0" step="1000" value="0">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="admin-car-minute-rate">⏱️ Tarifa por minuto extra</label>
-                            <input type="number" id="admin-car-minute-rate" class="form-input" min="0" step="10" value="100">
                         </div>
 
                         <!-- Tarifas Moto -->
@@ -328,28 +297,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="admin-moto-6h-rate">🕕 6 Horas</label>
-                            <input type="number" id="admin-moto-6h-rate" class="form-input" min="0" step="500" value="5000">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="admin-moto-12h-rate">🕛 12 Horas</label>
-                            <input type="number" id="admin-moto-12h-rate" class="form-input" min="0" step="500" value="9000">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="admin-moto-24h-rate">🌙 24 Horas</label>
+                            <label class="form-label" for="admin-moto-24h-rate">🌙 x día</label>
                             <input type="number" id="admin-moto-24h-rate" class="form-input" min="0" step="500" value="15000">
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="admin-moto-cupo-rate">🗓️ Tarifa Mensual (CUPO)</label>
                             <input type="number" id="admin-moto-cupo-rate" class="form-input" min="0" step="1000" value="0">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="admin-moto-minute-rate">⏱️ Tarifa por minuto extra</label>
-                            <input type="number" id="admin-moto-minute-rate" class="form-input" min="0" step="10" value="60">
                         </div>
 
                         <!-- Alertas -->
