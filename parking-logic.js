@@ -577,7 +577,10 @@ function calculatePrice(vehicleType, rateType, startDate, endDate, contractedDay
             } else {
                 // OTHER BLOCKS: Professional early exit logic.
                 const timeBasedTotal = durationInfo.totalMinutes * minuteRate;
-                baseTotal = Math.min(timeBasedTotal, totalBlockPrice);
+                // NEW BEHAVIOR: Always charge AT LEAST the minimum rate for early exits
+                const minimumBaseRate = vehicleRates['min'] || 0;
+                const calculatedBase = Math.min(timeBasedTotal, totalBlockPrice);
+                baseTotal = Math.max(calculatedBase, minimumBaseRate);
 
                 // Check for overtime (only if it exceeds the block duration)
                 if (durationInfo.totalMinutes > (allowedMinutes + 5)) {
@@ -856,8 +859,8 @@ async function markAsPaid(ticketId) {
         const now = new Date();
         const entryDate = new Date(ticket.fecha_ingreso);
 
-        // Fallback to 'hour' if rate_type is missing (legacy records)
-        const rateType = ticket.rate_type || 'hour';
+        // Fallback to 'min' if rate_type is missing (legacy records)
+        const rateType = ticket.rate_type || 'min';
 
         // Detect contracted days from estimated exit
         const diffEst = new Date(ticket.fecha_salida_estimada) - entryDate;
