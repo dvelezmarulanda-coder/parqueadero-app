@@ -468,6 +468,62 @@ body {
     50% { opacity: 0.7; }
 }
 
+/* ===== CUPO PAYMENT SELECTOR ===== */
+.cupo-payment-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.cupo-pay-option {
+    position: relative;
+}
+
+.cupo-pay-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.cupo-pay-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: 80px;
+    background-color: var(--color-card-bg);
+    color: var(--color-text);
+    gap: 6px;
+}
+
+.cupo-pay-label:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.cupo-pay-icon {
+    font-size: 1.5rem;
+}
+
+.cupo-pay-text {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+}
+
+.cupo-pay-option input[type="radio"]:checked + .cupo-pay-yes {
+    border-color: var(--color-success);
+    background-color: rgba(39, 174, 96, 0.08);
+}
+
+.cupo-pay-option input[type="radio"]:checked + .cupo-pay-no {
+    border-color: var(--color-warning);
+    background-color: rgba(230, 126, 34, 0.08);
+}
+
 /* ===== FORMS ===== */
 .form {
     max-width: 600px;

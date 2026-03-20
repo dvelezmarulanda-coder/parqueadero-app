@@ -968,12 +968,16 @@ function setupRegistrationForm() {
         await handleRegistration();
     };
 
-    // Toggle days selector visibility
+    // Toggle days selector and CUPO payment selector visibility
     const toggleDaysInput = () => {
         const selectedRate = document.querySelector('input[name="rate_type"]:checked')?.value;
         const daysGroup = document.getElementById('days-selector-group');
+        const cupoPayGroup = document.getElementById('cupo-payment-group');
         if (daysGroup) {
             daysGroup.style.display = selectedRate === '24h' ? 'block' : 'none';
+        }
+        if (cupoPayGroup) {
+            cupoPayGroup.style.display = selectedRate === 'cupo' ? 'block' : 'none';
         }
     };
 
@@ -1122,6 +1126,13 @@ async function handleRegistration() {
         // Get total for the ticket
         const priceDetails = calculatePrice(vehicleType, rateType, null, null, (rateType === '24h' ? numDays : 1));
 
+        // Determine payment status: for CUPO, check if user selected 'paid' or 'pending'
+        let estadoPago = false;
+        if (rateType === 'cupo') {
+            const cupoPayment = document.querySelector('input[name="cupo_payment"]:checked')?.value;
+            estadoPago = (cupoPayment === 'paid');
+        }
+
         const formData = {
             placa: document.getElementById('placa').value.trim().toUpperCase(),
             nombre_cliente: document.getElementById('nombre').value.trim(),
@@ -1132,7 +1143,7 @@ async function handleRegistration() {
             fecha_salida_estimada: fechaSalidaEstimada.toISOString(),
             rate_type: rateType,
             total: priceDetails.total,
-            estado_pago: false
+            estado_pago: estadoPago
         };
 
         // --- VALIDATION: Check if Spot or Plate is already active ---

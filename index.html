@@ -171,6 +171,27 @@
                         <input type="number" id="cantidad-dias" class="form-input" min="1" value="1">
                     </div>
 
+                    <!-- Estado de Pago CUPO (Solo para tarifa CUPO/mes) -->
+                    <div id="cupo-payment-group" class="form-group" style="display: none;">
+                        <label class="form-label">Estado de Pago del CUPO</label>
+                        <div class="cupo-payment-selector">
+                            <div class="cupo-pay-option">
+                                <input type="radio" id="cupo-paid" name="cupo_payment" value="paid" checked>
+                                <label for="cupo-paid" class="cupo-pay-label cupo-pay-yes">
+                                    <span class="cupo-pay-icon">✅</span>
+                                    <span class="cupo-pay-text">Ya pagó</span>
+                                </label>
+                            </div>
+                            <div class="cupo-pay-option">
+                                <input type="radio" id="cupo-pending" name="cupo_payment" value="pending">
+                                <label for="cupo-pending" class="cupo-pay-label cupo-pay-no">
+                                    <span class="cupo-pay-icon">🕐</span>
+                                    <span class="cupo-pay-text">Paga al salir</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Puesto -->
                     <div class="form-group">
                         <label class="form-label" for="puesto">Puesto de Parqueo</label>
