@@ -504,6 +504,7 @@ function renderActiveTickets(tickets) {
                     <button class="btn btn-success" onclick="markAsPaid('${ticket.id}')">
                         ✅ Pagar
                     </button>
+                    ${ticket.rate_type === 'cupo' ? `<button class="btn btn-renew" onclick="renewCupo('${ticket.id}')">🔄 Renovar CUPO</button>` : ''}
                 </div>
             </div>
         `;
@@ -518,6 +519,41 @@ function getAlertClass(fechaSalida) {
     if (diffMinutes < 0) return 'danger';
     if (diffMinutes < warningTime) return 'warning';
     return '';
+}
+
+// ===== CUPO RENEWAL =====
+async function renewCupo(ticketId) {
+    // Find the ticket
+    const ticket = allTickets.find(t => t.id === ticketId);
+    if (!ticket) {
+        alert('Ticket no encontrado');
+        return;
+    }
+
+    // Calculate new expiration: 30 days from current expiration (or from now if expired)
+    const currentExit = new Date(ticket.fecha_salida_estimada);
+    const now = new Date();
+    const baseDate = currentExit > now ? currentExit : now;
+    const newExit = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const confirmMsg = `¿Renovar CUPO de ${ticket.placa}?\n\nNueva fecha de vencimiento:\n${newExit.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        const { error } = await db.from('tickets').update({
+            fecha_salida_estimada: newExit.toISOString(),
+            estado_pago: false
+        }).eq('id', ticketId);
+
+        if (error) throw error;
+
+        showSuccessMessage(`✅ CUPO de ${ticket.placa} renovado hasta ${newExit.toLocaleDateString('es-CO')}`);
+        await loadDashboard();
+    } catch (error) {
+        console.error('Error renovando CUPO:', error);
+        alert('Error al renovar el CUPO: ' + (error.message || error));
+    }
 }
 
 // ===== PRICE CALCULATION: Fixed Block Rates + Overtime =====

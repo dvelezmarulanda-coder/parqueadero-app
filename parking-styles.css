@@ -432,6 +432,18 @@ body {
     flex-wrap: wrap;
 }
 
+.btn-renew {
+    background: linear-gradient(135deg, #0984e3 0%, #6c5ce7 100%);
+    color: var(--color-white);
+    box-shadow: 0 4px 6px rgba(108, 92, 231, 0.2);
+}
+
+.btn-renew:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(108, 92, 231, 0.3);
+    filter: brightness(1.1);
+}
+
 /* ===== CUPO DAYS BADGE ===== */
 .cupo-days-badge {
     display: inline-block;
