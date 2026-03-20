@@ -456,12 +456,30 @@ function renderActiveTickets(tickets) {
         const alertClass = getAlertClass(ticket.fecha_salida_estimada);
         const alertIcon = alertClass === 'danger' ? '🔴' : alertClass === 'warning' ? '🟠' : '🟢';
 
+        // Calculate remaining days badge for CUPO tickets
+        let cupoBadgeHtml = '';
+        if (ticket.rate_type === 'cupo') {
+            const now = new Date();
+            const exitDate = new Date(ticket.fecha_salida_estimada);
+            const diffMs = exitDate - now;
+            const remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+            if (remainingDays <= 0) {
+                cupoBadgeHtml = `<div class="cupo-days-badge cupo-expired">⚠️ CUPO vencido</div>`;
+            } else if (remainingDays <= 5) {
+                cupoBadgeHtml = `<div class="cupo-days-badge cupo-warning">📅 ${remainingDays} día${remainingDays !== 1 ? 's' : ''} restante${remainingDays !== 1 ? 's' : ''}</div>`;
+            } else {
+                cupoBadgeHtml = `<div class="cupo-days-badge cupo-ok">📅 ${remainingDays} días restantes</div>`;
+            }
+        }
+
         return `
             <div class="ticket-item ${alertClass}">
                 <div class="ticket-header">
                     <div class="ticket-plate">${alertIcon} ${ticket.placa}</div>
                     <span class="ticket-badge ${ticket.tipo_vehiculo}">${ticket.tipo_vehiculo}</span>
                 </div>
+                ${cupoBadgeHtml}
                 
                 <div class="ticket-info">
                     <div class="ticket-info-item">
