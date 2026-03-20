@@ -551,16 +551,16 @@ function calculatePrice(vehicleType, rateType, startDate, endDate, contractedDay
         // FIXED BLOCK billing
         if (!startDate || !endDate) {
             // Display mode: show the intended block price
-            const multiplier = (rateType === '24h') ? contractedDays : (rateType === 'cupo' ? 30 : 1);
+            const multiplier = (rateType === '24h') ? contractedDays : 1;
             baseTotal = blockPrice * multiplier;
         } else {
             // Checkout mode: professional early exit logic
             const hoursMap = { min: 3, '12h': 12, '24h': 24, cupo: 24*30 };
             
             // For multi-day, we multiply allowed hours and block price
-            const numDays = (rateType === '24h') ? contractedDays : (rateType === 'cupo' ? 30 : 1);
+            const numDays = (rateType === '24h') ? contractedDays : 1;
             const allowedHours = hoursMap[rateType] === 24 ? (24 * numDays) : hoursMap[rateType];
-            const totalBlockPrice = (rateType === '24h' || rateType === 'cupo') ? (blockPrice * numDays) : blockPrice;
+            const totalBlockPrice = (rateType === '24h') ? (blockPrice * numDays) : blockPrice;
             
             const allowedMinutes = allowedHours * 60;
             
@@ -1028,7 +1028,7 @@ function updateRatePricesDisplay() {
     const rates = ['min', '12h', '24h', 'cupo'];
     rates.forEach(rateType => {
         const daysInput = document.getElementById('cantidad-dias');
-        const numDays = (rateType === '24h' && daysInput) ? (parseInt(daysInput.value) || 1) : (rateType === 'cupo' ? 30 : 1);
+        const numDays = (rateType === '24h' && daysInput) ? (parseInt(daysInput.value) || 1) : 1;
         
         // Custom calculation for multi-day display
         const pricing = CONFIG.pricing || {};
@@ -1095,7 +1095,7 @@ async function handleRegistration() {
         const rateType = document.querySelector('input[name="rate_type"]:checked').value;
         const vehicleType = document.querySelector('input[name="tipo_vehiculo"]:checked').value;
         const daysInput = document.getElementById('cantidad-dias');
-        const numDays = (rateType === '24h' && daysInput) ? (parseInt(daysInput.value) || 1) : (rateType === 'cupo' ? 30 : 1);
+        const numDays = (rateType === '24h' && daysInput) ? (parseInt(daysInput.value) || 1) : 1;
         
         const hoursMap = { min: 3, '12h': 12, '24h': 24 * numDays, cupo: 24 * 30 };
         const blockHours = hoursMap[rateType] || 3;
