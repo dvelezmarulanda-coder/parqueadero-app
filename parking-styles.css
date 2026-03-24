@@ -822,6 +822,30 @@ body {
     margin-bottom: var(--spacing-md);
 }
 
+/* ===== BADGES (TABLE) ===== */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.bg-success {
+    background-color: rgba(39, 174, 96, 0.15);
+    color: var(--color-success);
+    border: 1px solid rgba(39, 174, 96, 0.3);
+}
+
+.bg-warning {
+    background-color: rgba(230, 126, 34, 0.15);
+    color: var(--color-warning);
+    border: 1px solid rgba(230, 126, 34, 0.3);
+}
+
 /* ===== ALERTS & MESSAGES ===== */
 .alert {
     padding: var(--spacing-md);
