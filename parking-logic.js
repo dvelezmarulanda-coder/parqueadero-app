@@ -541,12 +541,35 @@ async function renewCupo(ticketId) {
     if (!confirm(confirmMsg)) return;
 
     try {
-        const { error } = await db.from('tickets').update({
+        // Obtenemos el precio actual del CUPO
+        const priceDetails = calculatePrice(ticket.tipo_vehiculo, 'cupo', null, null);
+        const cupoPrice = priceDetails.total;
+
+        // 1. Crear un registro de pago ("historial") para que cuente como VENTA DEL DÍA
+        const paymentRecord = {
+            placa: ticket.placa,
+            nombre_cliente: ticket.nombre_cliente + ' (Renovación CUPO)',
+            celular: ticket.celular || '',
+            tipo_vehiculo: ticket.tipo_vehiculo,
+            puesto: ticket.puesto,
+            fecha_ingreso: now.toISOString(),
+            fecha_salida_estimada: newExit.toISOString(),
+            fecha_salida_real: now.toISOString(),
+            rate_type: 'cupo',
+            total: cupoPrice,
+            estado_pago: true // Pagado: se suma a las estadísticas diarias
+        };
+
+        const { error: errorInsert } = await db.from('tickets').insert([paymentRecord]);
+        if (errorInsert) throw errorInsert;
+
+        // 2. Actualizar el ticket activo extendiendo la fecha de expiración
+        const { error: errorUpdate } = await db.from('tickets').update({
             fecha_salida_estimada: newExit.toISOString(),
             estado_pago: false
         }).eq('id', ticketId);
 
-        if (error) throw error;
+        if (errorUpdate) throw errorUpdate;
 
         showSuccessMessage(`✅ CUPO de ${ticket.placa} renovado hasta ${newExit.toLocaleDateString('es-CO')}`);
         await loadDashboard();
@@ -1440,6 +1463,145 @@ function setupAdminPanel() {
 
     const btnReset = document.getElementById('btn-factory-reset');
     if (btnReset) btnReset.onclick = performFactoryReset;
+
+    const btnSearchTicket = document.getElementById('btn-admin-search-ticket');
+    if (btnSearchTicket) btnSearchTicket.onclick = searchAdminTicket;
+
+    const btnSaveTicket = document.getElementById('btn-admin-save-ticket');
+    if (btnSaveTicket) btnSaveTicket.onclick = saveAdminTicket;
+
+    const btnDeleteTicket = document.getElementById('btn-admin-delete-ticket');
+    if (btnDeleteTicket) btnDeleteTicket.onclick = deleteAdminTicket;
+}
+
+// ===== ADMIN TICKET EDIT =====
+async function searchAdminTicket() {
+    const placaInput = document.getElementById('admin-edit-search');
+    const msg = document.getElementById('admin-edit-message');
+    const container = document.getElementById('admin-edit-ticket-container');
+    
+    if (!placaInput || !msg || !container) return;
+    
+    const placa = placaInput.value.trim().toUpperCase();
+    if (!placa) {
+        msg.innerHTML = '<div class="alert alert-warning">Ingresa una placa válida</div>';
+        return;
+    }
+    
+    msg.innerHTML = '<div class="alert alert-info">Buscando...</div>';
+    container.style.display = 'none';
+    
+    try {
+        const { data: tickets, error } = await db.from('tickets')
+            .select('*')
+            .eq('placa', placa)
+            .order('fecha_ingreso', { ascending: false });
+            
+        if (error) throw error;
+        
+        if (!tickets || tickets.length === 0) {
+            msg.innerHTML = `<div class="alert alert-warning">No se encontró ningún ticket con la placa ${placa}</div>`;
+            return;
+        }
+        
+        msg.innerHTML = '';
+        const ticket = tickets[0]; // Mostrar el más reciente
+        
+        document.getElementById('edit-ticket-id').value = ticket.id;
+        document.getElementById('edit-ticket-placa').value = ticket.placa || '';
+        document.getElementById('edit-ticket-cliente').value = ticket.nombre_cliente || '';
+        document.getElementById('edit-ticket-celular').value = ticket.celular || '';
+        document.getElementById('edit-ticket-tipo').value = ticket.tipo_vehiculo || 'carro';
+        document.getElementById('edit-ticket-rate').value = ticket.rate_type || 'min';
+        document.getElementById('edit-ticket-puesto').value = ticket.puesto || '';
+        
+        const toLocalISO = (isoStr) => {
+            if (!isoStr) return '';
+            const d = new Date(isoStr);
+            if(isNaN(d.getTime())) return '';
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+        };
+        
+        document.getElementById('edit-ticket-ingreso').value = toLocalISO(ticket.fecha_ingreso);
+        document.getElementById('edit-ticket-salida-est').value = toLocalISO(ticket.fecha_salida_estimada);
+        
+        document.getElementById('edit-ticket-total').value = ticket.total || 0;
+        document.getElementById('edit-ticket-estado').value = ticket.estado_pago ? 'true' : 'false';
+        
+        container.style.display = 'block';
+        
+    } catch (error) {
+        msg.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    }
+}
+
+async function saveAdminTicket() {
+    const id = document.getElementById('edit-ticket-id').value;
+    const msg = document.getElementById('admin-edit-message');
+    if (!id) return;
+    
+    const placa = document.getElementById('edit-ticket-placa').value.trim().toUpperCase();
+    const cliente = document.getElementById('edit-ticket-cliente').value.trim();
+    const celular = document.getElementById('edit-ticket-celular').value.trim();
+    const tipo = document.getElementById('edit-ticket-tipo').value;
+    const rate = document.getElementById('edit-ticket-rate').value;
+    const puesto = document.getElementById('edit-ticket-puesto').value.trim().toUpperCase();
+    const ingreso = document.getElementById('edit-ticket-ingreso').value;
+    const salidaEst = document.getElementById('edit-ticket-salida-est').value;
+    const total = parseFloat(document.getElementById('edit-ticket-total').value) || 0;
+    const estadoPago = document.getElementById('edit-ticket-estado').value === 'true';
+    
+    if (!placa || !ingreso) {
+        msg.innerHTML = '<div class="alert alert-warning">Placa e Ingreso son campos requeridos</div>';
+        return;
+    }
+    
+    try {
+        const payload = {
+            placa,
+            nombre_cliente: cliente,
+            celular,
+            tipo_vehiculo: tipo,
+            rate_type: rate,
+            puesto,
+            fecha_ingreso: new Date(ingreso).toISOString(),
+            total,
+            estado_pago: estadoPago
+        };
+        if(salidaEst) payload.fecha_salida_estimada = new Date(salidaEst).toISOString();
+        
+        const { error } = await db.from('tickets').update(payload).eq('id', id);
+        if (error) throw error;
+        
+        msg.innerHTML = '<div class="alert alert-success">Ticket actualizado exitosamente.</div>';
+        setTimeout(() => msg.innerHTML = '', 4000);
+        await loadDashboard(); // Refrescar stats/lista
+    } catch (error) {
+        msg.innerHTML = `<div class="alert alert-danger">Error al guardar: ${error.message}</div>`;
+    }
+}
+
+async function deleteAdminTicket() {
+    const id = document.getElementById('edit-ticket-id').value;
+    const placa = document.getElementById('edit-ticket-placa').value;
+    const msg = document.getElementById('admin-edit-message');
+    if (!id) return;
+    
+    if (!confirm(`⚠️ ¿Eliminar permanentemente ticket de ${placa}? Esta acción no se puede deshacer.`)) return;
+    
+    try {
+        const { error } = await db.from('tickets').delete().eq('id', id);
+        if (error) throw error;
+        
+        document.getElementById('admin-edit-ticket-container').style.display = 'none';
+        msg.innerHTML = '<div class="alert alert-success">Ticket eliminado correctamente.</div>';
+        document.getElementById('admin-edit-search').value = '';
+        setTimeout(() => msg.innerHTML = '', 4000);
+        await loadDashboard(); // Refrescar listas
+    } catch (error) {
+        msg.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    }
 }
 
 function loadAdminPanelValues() {

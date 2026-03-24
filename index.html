@@ -288,6 +288,94 @@
             <div class="card">
                 <h2 class="card-title">⚙️ Panel de Administración</h2>
 
+                <!-- Ticket Management Section -->
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="color: var(--color-dark-gray); margin-bottom: 1rem;">📝 Editar / Borrar Tickets</h3>
+                    <div class="form">
+                        <div class="form-group">
+                            <label class="form-label" for="admin-edit-search">Buscar Ticket (por placa)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="admin-edit-search" class="form-input" placeholder="Ej: ABC123" autocomplete="off" style="flex: 1;">
+                                <button id="btn-admin-search-ticket" class="btn btn-primary" style="white-space: nowrap;">🔍 Buscar</button>
+                            </div>
+                        </div>
+
+                        <div id="admin-edit-ticket-container" style="display: none; background: rgba(9, 132, 227, 0.05); padding: 15px; border-radius: var(--radius-md); border: 1px solid rgba(9, 132, 227, 0.2); margin-top: 15px;">
+                            <input type="hidden" id="edit-ticket-id">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="form-group">
+                                    <label class="form-label">Placa</label>
+                                    <input type="text" id="edit-ticket-placa" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Celular</label>
+                                    <input type="text" id="edit-ticket-celular" class="form-input">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Cliente</label>
+                                <input type="text" id="edit-ticket-cliente" class="form-input">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                                <div class="form-group">
+                                    <label class="form-label">Vehículo</label>
+                                    <select id="edit-ticket-tipo" class="form-input">
+                                        <option value="carro">Carro</option>
+                                        <option value="moto">Moto</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tarifa</label>
+                                    <select id="edit-ticket-rate" class="form-input">
+                                        <option value="min">Mínima</option>
+                                        <option value="12h">12 Horas</option>
+                                        <option value="24h">x día</option>
+                                        <option value="cupo">CUPO</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Puesto</label>
+                                    <input type="text" id="edit-ticket-puesto" class="form-input">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="form-group">
+                                    <label class="form-label">Ingreso</label>
+                                    <input type="datetime-local" id="edit-ticket-ingreso" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Salida Estimada</label>
+                                    <input type="datetime-local" id="edit-ticket-salida-est" class="form-input">
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="form-group">
+                                    <label class="form-label">Total a Pagar</label>
+                                    <input type="number" id="edit-ticket-total" class="form-input" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Estado</label>
+                                    <select id="edit-ticket-estado" class="form-input">
+                                        <option value="false">Activo (Pendiente)</option>
+                                        <option value="true">Historial (Pagado)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button id="btn-admin-save-ticket" class="btn btn-success" style="flex: 2;">💾 Guardar Cambios</button>
+                                <button id="btn-admin-delete-ticket" class="btn btn-danger" style="flex: 1;">🗑️ Eliminar</button>
+                            </div>
+                        </div>
+                        <div id="admin-edit-message" class="mt-2"></div>
+                    </div>
+                </div>
+
                 <!-- Configuration Section -->
                 <div style="margin-bottom: 2rem;">
                     <h3 style="color: var(--color-dark-gray); margin-bottom: 1rem;">Configuración del Parqueadero</h3>
