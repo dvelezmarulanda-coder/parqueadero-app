@@ -1186,10 +1186,10 @@ async function handleRegistration() {
         const priceDetails = calculatePrice(vehicleType, rateType, null, null, (rateType === '24h' ? numDays : 1));
 
         // Determine payment status: for CUPO, check if user selected 'paid' or 'pending'
-        let estadoPago = false;
+        let isCupoPaidNow = false;
         if (rateType === 'cupo') {
             const cupoPayment = document.querySelector('input[name="cupo_payment"]:checked')?.value;
-            estadoPago = (cupoPayment === 'paid');
+            isCupoPaidNow = (cupoPayment === 'paid');
         }
 
         const formData = {
@@ -1202,7 +1202,7 @@ async function handleRegistration() {
             fecha_salida_estimada: fechaSalidaEstimada.toISOString(),
             rate_type: rateType,
             total: priceDetails.total,
-            estado_pago: estadoPago
+            estado_pago: false // Siempre empieza activo en el dashboard
         };
 
         // --- VALIDATION: Check if Spot or Plate is already active ---
@@ -1233,7 +1233,19 @@ async function handleRegistration() {
             }
         }
 
-        const { error } = await db.from('tickets').insert([formData]);
+        const recordsToInsert = [formData];
+
+        // Si es CUPO y pagó de una vez, creamos también un registro histórico de pago
+        if (isCupoPaidNow) {
+            recordsToInsert.push({
+                ...formData,
+                nombre_cliente: formData.nombre_cliente + ' (Pago Mes Inicial)',
+                fecha_salida_real: new Date().toISOString(),
+                estado_pago: true
+            });
+        }
+
+        const { error } = await db.from('tickets').insert(recordsToInsert);
 
         if (error) throw error;
 
