@@ -5,8 +5,8 @@
 window.CONFIG = {
     // Supabase Configuration
     supabase: {
-        url: 'https://qgxbjicfsszzqiyrbzga.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFneGJqaWNmc3N6enFpeXJiemdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NjM0MjAsImV4cCI6MjA4NDQzOTQyMH0.f8fzov42E5CMk5dkw0tncCm_M32KLU_rUF84PJz0eCA'
+        url: 'https://wtbskbxlokmmotqfdfvs.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YnNrYnhsb2ttb3RicWZkZnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODkzNDIsImV4cCI6MjA5Mzg2NTM0Mn0.p3onWFC6zhfTvLx3tHli2wLWbPx8QQTwRZY0tIS2AAE'
     },
 
     // Parking Configuration
