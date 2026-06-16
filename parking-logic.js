@@ -43,6 +43,7 @@ window.setupAdminAuth = () => {
     const loginForm = document.getElementById('login-credentials-form');
     const changeBtn = document.getElementById('btn-change-password');
     const logoutBtn = document.getElementById('btn-logout-admin');
+    const forgotBtn = document.getElementById('btn-forgot-password');
 
     if (setupForm) {
         setupForm.onsubmit = (e) => {
@@ -84,6 +85,16 @@ window.setupAdminAuth = () => {
     if (changeBtn) {
         changeBtn.onclick = () => {
             if (confirm('¿Seguro que deseas resetear la contraseña?')) {
+                localStorage.removeItem('admin_credentials');
+                location.reload();
+            }
+        };
+    }
+
+    if (forgotBtn) {
+        forgotBtn.onclick = (e) => {
+            e.preventDefault();
+            if (confirm('¿Seguro que deseas restablecer las credenciales de administrador? Esto te permitirá crear un nuevo correo y contraseña. No se perderá ningún ticket ni datos del parqueadero.')) {
                 localStorage.removeItem('admin_credentials');
                 location.reload();
             }
